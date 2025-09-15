@@ -1,0 +1,17 @@
+{
+  "name": "metatrader",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "install": "pip install nats-py pyinstaller unflatten uuid sentry_sdk",
+    "build": "docker compose build",
+    "push": "docker compose push",
+    "dev": "nodemon --exec python terminal/main.py"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

@@ -1,0 +1,8 @@
+version: "3.4"
+services:
+  build:
+    image: nmhung1210/repo:fxterminal-v4
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      

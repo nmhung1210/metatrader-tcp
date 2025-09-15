@@ -1,0 +1,9 @@
+.sessions
+.git
+.gitignore
+.gitmodules
+.gitattributes
+node_modules
+.vscode
+__pycache__
+dist
