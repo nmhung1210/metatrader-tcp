@@ -19,5 +19,4 @@ terminal/mt4/terminal.exe
 *.code-workspace
 *.log
 *.exe
-
-
+*mqlcache.dat
