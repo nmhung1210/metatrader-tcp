@@ -8,6 +8,7 @@ import asyncio
 from asyncio import StreamWriter
 from asyncio import StreamReader
 import hashlib
+import shlex
 
 BUNDLE_DIR = getattr(
     sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))
@@ -28,6 +29,7 @@ def start_mt4_terminal(username, password, server, gwport, uid):
         shutil.copytree(
             os.path.abspath(os.path.join(BUNDLE_DIR, "mt4")), terminal_dir
         )
+
     except:
         pass
     with open(param, "w", encoding="utf-8") as fparam:
@@ -134,7 +136,8 @@ async def handle_client(reader, writer):
             writer.close()
             await writer.wait_closed()
             return
-        params = data.decode().strip().split(",")
+        # Parse the received data as command line arguments
+        params = shlex.split(data.decode().strip())
         if len(params) != 5:
             writer.write(b"ERR Invalid parameters\n")
             await writer.drain()
@@ -159,8 +162,7 @@ async def handle_client(reader, writer):
                     print("Invalid terminal uid. Force closing...")
                     return
                 state["isconnected"] = True
-                writer.write(b"success=1\r\n")
-                
+                writer.write(b"{\"success\": 1}\r\n")
                 
                 async def pipe(src, dst):
                     try:

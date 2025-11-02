@@ -199,6 +199,10 @@ string FXSymbolInfo(const string symbol)
 
 string FXBuyLimit(string symbol, double volume, double price, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   trader.SetExpertMagicNumber(magic);
   string result = "{";
   price = NormalizePrice(symbol, price);
@@ -216,6 +220,10 @@ string FXBuyLimit(string symbol, double volume, double price, double sl = 0, dou
 
 string FXSellLimit(string symbol, double volume, double price, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   price = NormalizePrice(symbol, price);
   sl = NormalizePrice(symbol, sl);
@@ -232,6 +240,10 @@ string FXSellLimit(string symbol, double volume, double price, double sl = 0, do
 
 string FXBuyStop(string symbol, double volume, double price, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   price = NormalizePrice(symbol, price);
   sl = NormalizePrice(symbol, sl);
@@ -248,6 +260,10 @@ string FXBuyStop(string symbol, double volume, double price, double sl = 0, doub
 
 string FXSellStop(string symbol, double volume, double price, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   price = NormalizePrice(symbol, price);
   sl = NormalizePrice(symbol, sl);
@@ -264,6 +280,10 @@ string FXSellStop(string symbol, double volume, double price, double sl = 0, dou
 
 string FXBuy(string symbol, double volume, double price = 0, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   price = NormalizePrice(symbol, price);
   sl = NormalizePrice(symbol, sl);
@@ -280,6 +300,10 @@ string FXBuy(string symbol, double volume, double price = 0, double sl = 0, doub
 
 string FXSell(string symbol, double volume, double price = 0, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   price = NormalizePrice(symbol, price);
   sl = NormalizePrice(symbol, sl);
   tp = NormalizePrice(symbol, tp);
@@ -297,6 +321,10 @@ string FXSell(string symbol, double volume, double price = 0, double sl = 0, dou
 
 string FXOrders(string symbol = "", long offset = 0, long limit = 20, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "";
   int total = OrdersTotal();
   int count = 0;
@@ -349,6 +377,10 @@ string FXOrders(string symbol = "", long offset = 0, long limit = 20, long magic
 
 string FXOrdersTotal(string symbol = "", long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "";
   long total = OrdersTotal();
   long count = 0;
@@ -374,6 +406,10 @@ string FXOrdersTotal(string symbol = "", long magic = 0)
 
 string FXPositions(string symbol = "", long offset = 0, long limit = 20, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "";
   long total = PositionsTotal();
   long count = 0;
@@ -428,6 +464,10 @@ string FXPositions(string symbol = "", long offset = 0, long limit = 20, long ma
 
 string FXPositionsTotal(string symbol = "", long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "";
   long total = PositionsTotal();
   long count = 0;
@@ -526,7 +566,10 @@ string FXPositionClose(const ulong ticket)
 
 string FXRates(string symbol, string timeframe, long start_pos, long count)
 {
-  SymbolSelect(symbol, true);
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   MqlRates rates[];
   ArraySetAsSeries(rates, true);
 
@@ -568,7 +611,7 @@ string FXTick(string symbol)
   string result = "";
   if (!SymbolSelect(symbol, true))
   {
-    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+    return "{\"success\":0,\"error\":404}";
   }
   MqlTick tick;
   if (!SymbolInfoTick(symbol, tick))
@@ -590,6 +633,10 @@ string FXTick(string symbol)
 
 string FXPositionCloseAll(string symbol = "", long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   long total = PositionsTotal();
   long closed = 0;
@@ -641,6 +688,11 @@ string HistoryDealGetEntryInfo(long count, long position_id)
 
 string FXPositionHistory(string symbol = "", long offset = 0, long limit = 20, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
+
   string result = "";
   long count = 0;
   long index = 0;
@@ -710,6 +762,11 @@ string FXPositionHistory(string symbol = "", long offset = 0, long limit = 20, l
 
 string FXPositionHistoryTotal(string symbol = "", long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
+
   string result = "";
   long count = 0;
 
@@ -747,172 +804,40 @@ string FXTimeCurrent()
 }
 
 // Techical Indicators
-
-// iAD - Accumulation/Distribution
-// iAC - Accelerator Oscillator
-string FXiAC(string symbol, string timeframe, int shift)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iAC(symbol, tf);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iAD - Accumulation/Distribution
-string FXiAD(string symbol, string timeframe, int applied_volume)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iAD(symbol, tf, (ENUM_APPLIED_VOLUME)applied_volume);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iADX - Average Directional Index
-string FXiADX(string symbol, string timeframe, int period)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iADX(symbol, tf, period);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iADXWilder - Average Directional Index by Welles Wilder
-string FXiADXWilder(string symbol, string timeframe, int period)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iADXWilder(symbol, tf, period);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iAMA - Adaptive Moving Average
-string FXiAMA(string symbol, string timeframe, int period, int fast_ema, int slow_ema, int shift, int applied_price = PRICE_WEIGHTED)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iAMA(symbol, tf, period, fast_ema, slow_ema, shift, ENUM_APPLIED_PRICE(applied_price));
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iAO - Awesome Oscillator
-string FXiAO(string symbol, string timeframe)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iAO(symbol, tf);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iATR - Average True Range
-string FXiATR(string symbol, string timeframe, int period)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iATR(symbol, tf, period);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iBearsPower - Bears Power
-string FXiBearsPower(string symbol, string timeframe, int period)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iBearsPower(symbol, tf, period);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iBands - Bollinger Bands
-string FXiBands(string symbol, string timeframe, int period, int shift, double deviation, int applied_price)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iBands(symbol, tf, period, shift, deviation, applied_price);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iBullsPower - Bulls Power
-string FXiBullsPower(string symbol, string timeframe, int period)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iBullsPower(symbol, tf, period);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iDEMA - Double Exponential Moving Average
-string FXiDEMA(string symbol, string timeframe, int period, int shift, int applied_price)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iDEMA(symbol, tf, period, shift, applied_price);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iForce - Force Index
-string FXiForce(string symbol, string timeframe, int period, int ma_method, int applied_volume)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iForce(symbol, tf, period, (ENUM_MA_METHOD)ma_method, ENUM_APPLIED_VOLUME(applied_volume));
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iFrAMA - Fractal Adaptive Moving Average
-string FXiFrAMA(string symbol, string timeframe, int period, int shift, int applied_price)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iFrAMA(symbol, tf, period, shift, (ENUM_APPLIED_PRICE)applied_price);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iMomentum - Momentum
-string FXiMomentum(string symbol, string timeframe, int period, int applied_price)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iMomentum(symbol, tf, period, (ENUM_APPLIED_PRICE)applied_price);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iMFI - Money Flow Index
-string FXiMFI(string symbol, string timeframe, int period, int applied_volume)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iMFI(symbol, tf, period, (ENUM_APPLIED_VOLUME)applied_volume);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
 // iMA - Moving Average
-string FXiMA(string symbol, string timeframe, int period, int ma_shift, int ma_method, int applied_price)
+string FXiMA(string symbol, string timeframe, int period)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
+  MqlRates rates[];
+  ArraySetAsSeries(rates, true);
   ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iMA(symbol, tf, period, ma_shift, (ENUM_MA_METHOD)ma_method, (ENUM_APPLIED_PRICE)applied_price);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iOsMA - Moving Average of Oscillator (MACD histogram)
-string FXiOsMA(string symbol, string timeframe, int fast_ema_period, int slow_ema_period, int signal_period, int applied_price)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iOsMA(symbol, tf, fast_ema_period, slow_ema_period, signal_period, (ENUM_APPLIED_PRICE)applied_price);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iMACD - Moving Averages Convergence-Divergence
-string FXiMACD(string symbol, string timeframe, int fast_ema_period, int slow_ema_period, int signal_period, int applied_price)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iMACD(symbol, tf, fast_ema_period, slow_ema_period, signal_period, (ENUM_APPLIED_PRICE)applied_price);
+  long copied = CopyRates(symbol, tf, 0, period, rates);
+  if (copied != period || copied <= 0)
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  double value = iMA(symbol, tf, period, 0, MODE_LWMA, PRICE_WEIGHTED);
   return StringFormat("{\"data\":%f,\"success\":1}", value);
 }
 
 // iRSI - Relative Strength Index
-string FXiRSI(string symbol, string timeframe, int period, int applied_price)
+string FXiRSI(string symbol, string timeframe, int period)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
+  MqlRates rates[];
+  ArraySetAsSeries(rates, true);
   ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iRSI(symbol, tf, period, (ENUM_APPLIED_PRICE)applied_price);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iWPR - Williams' Percent Range
-string FXiWPR(string symbol, string timeframe, int period)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iWPR(symbol, tf, period);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-// iVolumes - Volumes
-string FXiVolumes(string symbol, string timeframe, int applied_volume)
-{
-  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
-  double value = iVolumes(symbol, tf, (ENUM_APPLIED_VOLUME)applied_volume);
+  long copied = CopyRates(symbol, tf, 0, period, rates);
+  if (copied != period || copied <= 0)
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  double value = iRSI(symbol, tf, period, PRICE_WEIGHTED);
   return StringFormat("{\"data\":%f,\"success\":1}", value);
 }

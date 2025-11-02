@@ -103,15 +103,17 @@ string FXAccountInfo()
 
 string FXSymbols()
 {
-  string result = "{";
+  string result = "";
   long total = SymbolsTotal(false);
-  for (long i = 0; i < total; i++)
+  result += "[";
+  for (int i = 0; i < total; i++)
   {
-    if (i > 0)
+    result += StringFormat("\"%s\"", SymbolName(i, false));
+    if (i < total - 1)
       result += ",";
-    result += StringFormat("\"data[%d]\":\"%s\"", i, SymbolName(i, false));
   }
-  result += StringFormat(",\"success\":%I64d}", true);
+  result += "]";
+  result = StringFormat("{\"data\":%s,\"success\":%I64d}", result, true);
   return result;
 }
 
@@ -168,6 +170,10 @@ string FXSymbolInfo(const string symbol)
 
 string FXBuyLimit(string symbol, double volume, double price, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   price = NormalizePrice(symbol, price);
   sl = NormalizePrice(symbol, sl);
@@ -184,6 +190,10 @@ string FXBuyLimit(string symbol, double volume, double price, double sl = 0, dou
 
 string FXSellLimit(string symbol, double volume, double price, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   price = NormalizePrice(symbol, price);
   sl = NormalizePrice(symbol, sl);
@@ -200,6 +210,10 @@ string FXSellLimit(string symbol, double volume, double price, double sl = 0, do
 
 string FXBuyStop(string symbol, double volume, double price, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   price = NormalizePrice(symbol, price);
   sl = NormalizePrice(symbol, sl);
@@ -216,6 +230,10 @@ string FXBuyStop(string symbol, double volume, double price, double sl = 0, doub
 
 string FXSellStop(string symbol, double volume, double price, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   price = NormalizePrice(symbol, price);
   sl = NormalizePrice(symbol, sl);
@@ -232,6 +250,10 @@ string FXSellStop(string symbol, double volume, double price, double sl = 0, dou
 
 string FXBuy(string symbol, double volume, double price = 0, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   MqlTick tick;
   if (price == 0)
@@ -258,6 +280,10 @@ string FXBuy(string symbol, double volume, double price = 0, double sl = 0, doub
 
 string FXSell(string symbol, double volume, double price = 0, double sl = 0, double tp = 0, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   MqlTick tick;
   if (price == 0)
@@ -284,6 +310,10 @@ string FXSell(string symbol, double volume, double price = 0, double sl = 0, dou
 
 string FXOrders(string symbol = "", long offset = 0, long limit = 20, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   long total = OrdersTotal();
   long count = 0;
@@ -340,6 +370,10 @@ string FXOrders(string symbol = "", long offset = 0, long limit = 20, long magic
 
 string FXOrdersTotal(string symbol = "", long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   long total = OrdersTotal();
   long count = 0;
@@ -371,6 +405,10 @@ string FXOrdersTotal(string symbol = "", long magic = 0)
 
 string FXPositions(string symbol = "", long offset = 0, long limit = 20, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   long total = OrdersTotal();
   long count = 0;
@@ -429,6 +467,10 @@ string FXPositions(string symbol = "", long offset = 0, long limit = 20, long ma
 
 string FXPositionsTotal(string symbol = "", long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   string result = "{";
   long total = OrdersTotal();
   long count = 0;
@@ -559,7 +601,10 @@ string FXPositionClose(long ticket)
 
 string FXRates(string symbol, string timeframe, long start_pos, long count)
 {
-  SymbolSelect(symbol, true);
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   MqlRates rates[];
 
   ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
@@ -592,7 +637,7 @@ string FXTick(string symbol)
 {
   if (!SymbolSelect(symbol, true))
   {
-    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+    return "{\"success\":0,\"error\":404}";
   }
   MqlTick tick;
   if (!SymbolInfoTick(symbol, tick))
@@ -614,6 +659,10 @@ string FXTick(string symbol)
 
 string FXPositionCloseAll(string symbol = "", long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
   MqlTick tick;
   if (!SymbolInfoTick(symbol, tick))
   {
@@ -665,6 +714,11 @@ string FXPositionCloseAll(string symbol = "", long magic = 0)
 
 string FXPositionHistory(string symbol = "", long offset = 0, long limit = 20, long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
+
   string result = "{\"data\":[";
   long count = 0;
   long index = 0;
@@ -720,6 +774,11 @@ string FXPositionHistory(string symbol = "", long offset = 0, long limit = 20, l
 
 string FXPositionHistoryTotal(string symbol = "", long magic = 0)
 {
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
+
   string result = "{";
   long count = 0;
   long deals = OrdersHistoryTotal();
@@ -756,236 +815,36 @@ string FXTimeCurrent()
   return result;
 }
 
-string FXiAC(string symbol, string timeframe, int shift = 0)
+string FXiMA(string symbol, string timeframe, int period = 14)
 {
-  double value = iAC(symbol, StringToTimeframe(timeframe), shift);
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
+  MqlRates rates[];
+  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
+  long copied = CopyRates(symbol, tf, 0, period, rates);
+  if (copied != period || copied <= 0)
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  double value = iMA(symbol, tf, period, 0, MODE_SMA, PRICE_CLOSE, 0);
   return StringFormat("{\"data\":%f,\"success\":1}", value);
 }
 
-string FXiAD(string symbol, string timeframe, int shift = 0)
+string FXiRSI(string symbol, string timeframe, int period = 14)
 {
-  double value = iAD(symbol, StringToTimeframe(timeframe), shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiADX(string symbol, string timeframe, int period = 14, int applied_price = PRICE_CLOSE, int mode = MODE_MAIN, int shift = 0)
-{
-  double value = iADX(symbol, StringToTimeframe(timeframe), period, applied_price, mode, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiADXWilder(string symbol, string timeframe, int period = 14, int applied_price = PRICE_CLOSE, int mode = MODE_MAIN, int shift = 0)
-{
-  double value = iADXWilder(symbol, StringToTimeframe(timeframe), period, applied_price, mode, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiAlligator(string symbol, string timeframe, int jaw_period = 13, int jaw_shift = 8, int teeth_period = 8, int teeth_shift = 5, int lips_period = 5, int lips_shift = 3, int ma_method = MODE_SMMA, int applied_price = PRICE_MEDIAN, int mode = 0, int shift = 0)
-{
-  double value = iAlligator(symbol, StringToTimeframe(timeframe), jaw_period, jaw_shift, teeth_period, teeth_shift, lips_period, lips_shift, ma_method, applied_price, mode, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiAMA(string symbol, string timeframe, int period = 9, int fast_ema = 2, int slow_ema = 30, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iAMA(symbol, StringToTimeframe(timeframe), period, fast_ema, slow_ema, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiAO(string symbol, string timeframe, int shift = 0)
-{
-  double value = iAO(symbol, StringToTimeframe(timeframe), shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiATR(string symbol, string timeframe, int period = 14, int shift = 0)
-{
-  double value = iATR(symbol, StringToTimeframe(timeframe), period, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiBearsPower(string symbol, string timeframe, int period = 13, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iBearsPower(symbol, StringToTimeframe(timeframe), period, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiBands(string symbol, string timeframe, int period = 20, int deviation = 2, int bands_shift = 0, int applied_price = PRICE_CLOSE, int mode = MODE_MAIN, int shift = 0)
-{
-  double value = iBands(symbol, StringToTimeframe(timeframe), period, deviation, bands_shift, applied_price, mode, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiBullsPower(string symbol, string timeframe, int period = 13, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iBullsPower(symbol, StringToTimeframe(timeframe), period, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiCCI(string symbol, string timeframe, int period = 14, int applied_price = PRICE_TYPICAL, int shift = 0)
-{
-  double value = iCCI(symbol, StringToTimeframe(timeframe), period, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiChaikin(string symbol, string timeframe, int fast_ema_period = 3, int slow_ema_period = 10, int shift = 0)
-{
-  double value = iChaikin(symbol, StringToTimeframe(timeframe), fast_ema_period, slow_ema_period, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiCustom(string symbol, string timeframe, string indicator, int shift = 0)
-{
-  double value = iCustom(symbol, StringToTimeframe(timeframe), indicator, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiDEMA(string symbol, string timeframe, int period = 14, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iDEMA(symbol, StringToTimeframe(timeframe), period, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiDeMarker(string symbol, string timeframe, int period = 14, int shift = 0)
-{
-  double value = iDeMarker(symbol, StringToTimeframe(timeframe), period, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiEnvelopes(string symbol, string timeframe, int ma_period = 14, int ma_method = MODE_SMA, int ma_shift = 0, double deviation = 0.1, int applied_price = PRICE_CLOSE, int mode = MODE_MAIN, int shift = 0)
-{
-  double value = iEnvelopes(symbol, StringToTimeframe(timeframe), ma_period, ma_method, ma_shift, deviation, applied_price, mode, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiForce(string symbol, string timeframe, int period = 13, int ma_method = MODE_SMA, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iForce(symbol, StringToTimeframe(timeframe), period, ma_method, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiFractals(string symbol, string timeframe, int mode = MODE_UPPER, int shift = 0)
-{
-  double value = iFractals(symbol, StringToTimeframe(timeframe), mode, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiFrAMA(string symbol, string timeframe, int period = 14, int fast_ema = 2, int slow_ema = 30, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iFrAMA(symbol, StringToTimeframe(timeframe), period, fast_ema, slow_ema, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiGator(string symbol, string timeframe, int mode = 0, int shift = 0)
-{
-  double value = iGator(symbol, StringToTimeframe(timeframe), mode, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiIchimoku(string symbol, string timeframe, int tenkan_sen = 9, int kijun_sen = 26, int senkou_span_b = 52, int mode = 0, int shift = 0)
-{
-  double value = iIchimoku(symbol, StringToTimeframe(timeframe), tenkan_sen, kijun_sen, senkou_span_b, mode, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiBWMFI(string symbol, string timeframe, int shift = 0)
-{
-  double value = iBWMFI(symbol, StringToTimeframe(timeframe), shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiMomentum(string symbol, string timeframe, int period = 14, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iMomentum(symbol, StringToTimeframe(timeframe), period, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiMFI(string symbol, string timeframe, int period = 14, int shift = 0)
-{
-  double value = iMFI(symbol, StringToTimeframe(timeframe), period, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiMA(string symbol, string timeframe, int period = 14, int ma_shift = 0, int ma_method = MODE_SMA, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iMA(symbol, StringToTimeframe(timeframe), period, ma_shift, ma_method, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiOsMA(string symbol, string timeframe, int fast_ema_period = 12, int slow_ema_period = 26, int signal_period = 9, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iOsMA(symbol, StringToTimeframe(timeframe), fast_ema_period, slow_ema_period, signal_period, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiMACD(string symbol, string timeframe, int fast_ema_period = 12, int slow_ema_period = 26, int signal_period = 9, int applied_price = PRICE_CLOSE, int mode = MODE_MAIN, int shift = 0)
-{
-  double value = iMACD(symbol, StringToTimeframe(timeframe), fast_ema_period, slow_ema_period, signal_period, applied_price, mode, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiOBV(string symbol, string timeframe, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iOBV(symbol, StringToTimeframe(timeframe), applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiSAR(string symbol, string timeframe, double step = 0.02, double maximum = 0.2, int shift = 0)
-{
-  double value = iSAR(symbol, StringToTimeframe(timeframe), step, maximum, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiRSI(string symbol, string timeframe, int period = 14, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iRSI(symbol, StringToTimeframe(timeframe), period, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiRVI(string symbol, string timeframe, int period = 10, int mode = MODE_MAIN, int shift = 0)
-{
-  double value = iRVI(symbol, StringToTimeframe(timeframe), period, mode, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiStdDev(string symbol, string timeframe, int ma_period = 20, int ma_shift = 0, int ma_method = MODE_SMA, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iStdDev(symbol, StringToTimeframe(timeframe), ma_period, ma_shift, ma_method, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiStochastic(string symbol, string timeframe, int k_period = 5, int d_period = 3, int slowing = 3, int method = MODE_SMA, int price_field = 0, int mode = MODE_MAIN, int shift = 0)
-{
-  double value = iStochastic(symbol, StringToTimeframe(timeframe), k_period, d_period, slowing, method, price_field, mode, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiTEMA(string symbol, string timeframe, int period = 14, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iTEMA(symbol, StringToTimeframe(timeframe), period, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiTriX(string symbol, string timeframe, int period = 14, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iTriX(symbol, StringToTimeframe(timeframe), period, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiWPR(string symbol, string timeframe, int period = 14, int shift = 0)
-{
-  double value = iWPR(symbol, StringToTimeframe(timeframe), period, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiVIDyA(string symbol, string timeframe, int period = 9, int alpha = 12, int applied_price = PRICE_CLOSE, int shift = 0)
-{
-  double value = iVIDyA(symbol, StringToTimeframe(timeframe), period, alpha, applied_price, shift);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
-}
-
-string FXiVolumes(string symbol, string timeframe, int shift = 0)
-{
-  double value = iVolumes(symbol, StringToTimeframe(timeframe), shift);
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
+  MqlRates rates[];
+  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
+  long copied = CopyRates(symbol, tf, 0, period, rates);
+  if (copied != period || copied <= 0)
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  double value = iRSI(symbol, tf, period, PRICE_CLOSE, 0);
   return StringFormat("{\"data\":%f,\"success\":1}", value);
 }

@@ -9,7 +9,6 @@ FROM nmhung1210/repo:wine64slim
 WORKDIR /app
 
 COPY --from=builder /app/dist/main.exe /app/app.exe
-ADD entrypoint.sh /bin/entrypoint.sh
-RUN chmod a+x /bin/entrypoint.sh
 
-ENTRYPOINT [ "/bin/entrypoint.sh" ]
+ENTRYPOINT [ "xvfb-run" ]
+CMD [ "--auto-servernum", "--server-args=\"-screen 0 8x8x8\"", "wine", "/app/app.exe" ]

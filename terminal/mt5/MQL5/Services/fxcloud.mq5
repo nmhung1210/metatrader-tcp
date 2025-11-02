@@ -27,20 +27,17 @@ void OnDisconnected()
 
 string OnMessage(string msg)
 {
-  uint start = GetTickCount();
   string args[];
-  long len = StringSplit(msg, StringGetCharacter(",", 0), args);
-  if (len <= 1)
+  long len = StringSplit(msg, StringGetCharacter(" ", 0), args);
+  if (len <= 0)
   {
     return "";
   }
-  string uuid = args[0];
-  string action = args[1];
+  string action = args[0];
   string params[];
-  ArrayCopy(params, args, 0, 2, WHOLE_ARRAY);
+  ArrayCopy(params, args, 0, 1, WHOLE_ARRAY);
   string result = OnAction(action, params);
-  uint time = GetTickCount() - start;
-  return StringFormat("uuid=%s,time=%d,%s", uuid, time, result);
+  return StringFormat("%s", result);
 }
 
 string OnAction(string action, string &args[])
@@ -249,188 +246,12 @@ string OnAction(string action, string &args[])
     return FXTimeCurrent();
   }
 
-  if (action == "iAC")
-  {
-    return FXiAC(
-        args[0],                 // symbol
-        args[1],                 // timeframe
-        StringToInteger(args[2]) // shift
-    );
-  }
-
-  if (action == "iAD")
-  {
-    return FXiAD(
-        args[0],                 // symbol
-        args[1],                 // timeframe
-        StringToInteger(args[2]) // applied_volume
-    );
-  }
-
-  if (action == "iADX")
-  {
-    return FXiADX(
-        args[0],                 // symbol
-        args[1],                 // timeframe
-        StringToInteger(args[2]) // period
-    );
-  }
-
-  if (action == "iADXWilder")
-  {
-    return FXiADXWilder(
-        args[0],                 // symbol
-        args[1],                 // timeframe
-        StringToInteger(args[2]) // period
-    );
-  }
-
-  if (action == "iAMA")
-  {
-    return FXiAMA(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2]), // period
-        StringToInteger(args[3]), // fast_ema
-        StringToInteger(args[4]), // slow_ema
-        StringToInteger(args[5]), // shift
-        StringToInteger(args[6])  // applied_price (optional)
-    );
-  }
-
-  if (action == "iAO")
-  {
-    return FXiAO(
-        args[0], // symbol
-        args[1]  // timeframe
-    );
-  }
-
-  if (action == "iATR")
-  {
-    return FXiATR(
-        args[0],                 // symbol
-        args[1],                 // timeframe
-        StringToInteger(args[2]) // period
-    );
-  }
-
-  if (action == "iBearsPower")
-  {
-    return FXiBearsPower(
-        args[0],                 // symbol
-        args[1],                 // timeframe
-        StringToInteger(args[2]) // period
-    );
-  }
-
-  if (action == "iBands")
-  {
-    return FXiBands(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2]), // period
-        StringToInteger(args[3]), // shift
-        StringToDouble(args[4]),  // deviation
-        StringToInteger(args[5])  // applied_price
-    );
-  }
-
-  if (action == "iBullsPower")
-  {
-    return FXiBullsPower(
-        args[0],                 // symbol
-        args[1],                 // timeframe
-        StringToInteger(args[2]) // period
-    );
-  }
-
-  if (action == "iDEMA")
-  {
-    return FXiDEMA(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2]), // period
-        StringToInteger(args[3]), // shift
-        StringToInteger(args[4])  // applied_price
-    );
-  }
-
-  if (action == "iForce")
-  {
-    return FXiForce(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2]), // period
-        StringToInteger(args[3]), // ma_method
-        StringToInteger(args[4])  // applied_volume
-    );
-  }
-
-  if (action == "iFrAMA")
-  {
-    return FXiFrAMA(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2]), // period
-        StringToInteger(args[3]), // shift
-        StringToInteger(args[4])  // applied_price
-    );
-  }
-
-  if (action == "iMomentum")
-  {
-    return FXiMomentum(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2]), // period
-        StringToInteger(args[3])  // applied_price
-    );
-  }
-
-  if (action == "iMFI")
-  {
-    return FXiMFI(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2]), // period
-        StringToInteger(args[3])  // applied_volume
-    );
-  }
-
   if (action == "iMA")
   {
     return FXiMA(
         args[0],                  // symbol
         args[1],                  // timeframe
-        StringToInteger(args[2]), // period
-        StringToInteger(args[3]), // ma_shift
-        StringToInteger(args[4]), // ma_method
-        StringToInteger(args[5])  // applied_price
-    );
-  }
-
-  if (action == "iOsMA")
-  {
-    return FXiOsMA(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2]), // fast_ema_period
-        StringToInteger(args[3]), // slow_ema_period
-        StringToInteger(args[4]), // signal_period
-        StringToInteger(args[5])  // applied_price
-    );
-  }
-
-  if (action == "iMACD")
-  {
-    return FXiMACD(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2]), // fast_ema_period
-        StringToInteger(args[3]), // slow_ema_period
-        StringToInteger(args[4]), // signal_period
-        StringToInteger(args[5])  // applied_price
+        StringToInteger(args[2])  // period
     );
   }
 
@@ -439,26 +260,7 @@ string OnAction(string action, string &args[])
     return FXiRSI(
         args[0],                  // symbol
         args[1],                  // timeframe
-        StringToInteger(args[2]), // period
-        StringToInteger(args[3])  // applied_price
-    );
-  }
-
-  if (action == "iWPR")
-  {
-    return FXiWPR(
-        args[0],                 // symbol
-        args[1],                 // timeframe
-        StringToInteger(args[2]) // period
-    );
-  }
-
-  if (action == "iVolumes")
-  {
-    return FXiVolumes(
-        args[0],                 // symbol
-        args[1],                 // timeframe
-        StringToInteger(args[2]) // applied_volume
+        StringToInteger(args[2])  // period
     );
   }
 

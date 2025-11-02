@@ -1,3 +1,6 @@
+@echo off
+cd /d %~dp0
+
 if not exist terminal64.exe (
     powershell -Command "Expand-Archive -Force 'terminal64.zip' ."
 )

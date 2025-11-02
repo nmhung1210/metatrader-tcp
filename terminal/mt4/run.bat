@@ -13,13 +13,10 @@ for %%f in (config\*) do (
 
 
 for /d %%d in (MQL4\*) do (
-    if /I not "%%~nxd"=="Scripts" rmdir /s /q "%%d"
+    if /I not "%%~nxd"=="Scripts" if /I not "%%~nxd"=="Presets" rmdir /s /q "%%d"
 )
 
 for /d %%d in (MQL4\Scripts\*) do (
     rmdir /s /q "%%d"
 )
 
-for %%f in (MQL4\Scripts\*) do (
-    if /I not "%%~nxf"=="actions.mqh" if /I not "%%~nxf"=="fxcloud.mq4" if /I not "%%~nxf"=="socket.mqh"  del /f /q "%%f"
-)
