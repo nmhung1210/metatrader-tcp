@@ -249,19 +249,35 @@ string OnAction(string action, string &args[])
   if (action == "iMA")
   {
     return FXiMA(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2])  // period
+        args[0],                 // symbol
+        args[1],                 // timeframe
+        StringToInteger(args[2]) // period
     );
   }
 
   if (action == "iRSI")
   {
     return FXiRSI(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2])  // period
+        args[0],                 // symbol
+        args[1],                 // timeframe
+        StringToInteger(args[2]) // period
     );
+  }
+
+  if (action == "iMomentum")
+  {
+    return FXiMomentum(
+        args[0],
+        args[1],
+        StringToInteger(args[2]));
+  }
+
+  if (action == "iForce")
+  {
+    return FXiForce(
+        args[0],
+        args[1],
+        StringToInteger(args[2]));
   }
 
   return "";

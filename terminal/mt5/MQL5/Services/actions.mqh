@@ -841,3 +841,41 @@ string FXiRSI(string symbol, string timeframe, int period)
   double value = iRSI(symbol, tf, period, PRICE_WEIGHTED);
   return StringFormat("{\"data\":%f,\"success\":1}", value);
 }
+
+
+string FXiMomentum(string symbol, string timeframe, int period)
+{
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
+  MqlRates rates[];
+  ArraySetAsSeries(rates, true);
+  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
+  long copied = CopyRates(symbol, tf, 0, period, rates);
+  if (copied != period || copied <= 0)
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  double value = iMomentum(symbol, tf, period, PRICE_WEIGHTED);
+  return StringFormat("{\"data\":%f,\"success\":1}", value);
+}
+
+
+string FXiForce(string symbol, string timeframe, int period)
+{
+  if (!SymbolSelect(symbol, true))
+  {
+    return "{\"success\":0,\"error\":404}";
+  }
+  MqlRates rates[];
+  ArraySetAsSeries(rates, true);
+  ENUM_TIMEFRAMES tf = StringToTimeframe(timeframe);
+  long copied = CopyRates(symbol, tf, 0, period, rates);
+  if (copied != period || copied <= 0)
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  double value = iForce(symbol, tf, period, MODE_LWMA, VOLUME_REAL);
+  return StringFormat("{\"data\":%f,\"success\":1}", value);
+}

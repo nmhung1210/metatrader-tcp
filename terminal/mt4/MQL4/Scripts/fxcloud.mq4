@@ -251,18 +251,36 @@ string OnAction(string action, string &args[])
 
   // --- Technical indicator integrations using actions.mqh wrappers ---
   if (action == "iMA")
+  {
     return FXiMA(
         args[0],
         args[1],
-        StringToInteger(args[2])
-    );
+        StringToInteger(args[2]));
+  }
 
   if (action == "iRSI")
+  {
     return FXiRSI(
         args[0],
         args[1],
-        StringToInteger(args[2])
-    );
+        StringToInteger(args[2]));
+  }
+
+  if (action == "iMomentum")
+  {
+    return FXiMomentum(
+        args[0],
+        args[1],
+        StringToInteger(args[2]));
+  }
+
+  if (action == "iForce")
+  {
+    return FXiForce(
+        args[0],
+        args[1],
+        StringToInteger(args[2]));
+  }
 
   return "";
 }
