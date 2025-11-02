@@ -20,7 +20,7 @@ def start_mt4_terminal(username, password, server, gwport, uid):
     safe_server = "".join(c if c.isalnum() else "_" for c in str(server))
     hash_pw = hashlib.md5(password.encode("utf-8")).hexdigest()
     terminal_dir = os.path.join(
-        ".sessions", "mt4", str(username), safe_server, hash_pw
+        ".sessions", "mt4", str(username), safe_server, uid
     )
     terminal = os.path.join(terminal_dir, "terminal.exe")
     config = os.path.join(terminal_dir, "session.conf")
@@ -55,7 +55,8 @@ def start_mt4_terminal(username, password, server, gwport, uid):
             )
         )
 
-    return Popen([terminal, "session.conf", "/portable"], cwd=terminal_dir)
+    return Popen([terminal, "session.conf", "/portable"], cwd=terminal_dir), terminal_dir
+    
 
 
 def start_mt5_terminal(username, password, server, gwport, uid):
@@ -64,7 +65,7 @@ def start_mt5_terminal(username, password, server, gwport, uid):
     safe_server = "".join(c if c.isalnum() else "_" for c in str(server))
     hash_pw = hashlib.md5(password.encode("utf-8")).hexdigest()
     terminal_dir = os.path.join(
-        ".sessions", "mt5", str(username), safe_server, hash_pw
+        ".sessions", "mt5", str(username), safe_server, uid
     )
     terminal = os.path.join(terminal_dir, "terminal64.exe")
     config = os.path.join(terminal_dir, "session.conf")
@@ -108,9 +109,7 @@ def start_mt5_terminal(username, password, server, gwport, uid):
                 ]
             )
         )
-    return Popen(
-        terminal + " /config:session.conf" + " /portable=true", cwd=terminal_dir
-    )
+    return Popen(terminal + " /config:session.conf" + " /portable=true", cwd=terminal_dir), terminal_dir
 
 
 def start_terminal(platform, username, password, server, gwport, uid):
@@ -171,6 +170,7 @@ async def handle_client(reader, writer):
                             if not data:
                                 break
                             dst.write(data)
+                            await asyncio.sleep(0.01)
                     except Exception:
                         pass
 
@@ -188,7 +188,7 @@ async def handle_client(reader, writer):
             handle_bridge_client, "127.0.0.1", 0
         )
         gwport = gwserver.sockets[0].getsockname()[1]  # Get the gateway port
-        proc = start_terminal(platform, username, password, server, gwport, uid)
+        proc, terminal_dir = start_terminal(platform, username, password, server, gwport, uid)
 
         timeout = 30  # seconds
         while not state["isconnected"] and timeout > 0:
@@ -208,9 +208,18 @@ async def handle_client(reader, writer):
         if proc is not None:
             proc.terminate()
             try:
-                proc.wait(timeout=5)
+                await proc.wait(timeout=5)
             except Exception:
                 proc.kill()
+            while True:
+                try:    
+                    if not os.path.exists(terminal_dir):
+                        break
+                    await asyncio.sleep(10)  # Wait a bit for terminal to release files
+                    shutil.rmtree(terminal_dir)
+                    break
+                except Exception as e:
+                    pass
 
 async def main():
     parser = argparse.ArgumentParser()
