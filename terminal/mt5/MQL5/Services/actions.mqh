@@ -819,8 +819,18 @@ string FXiMA(string symbol, string timeframe, int period)
   {
     return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
   }
-  double value = iMA(symbol, tf, period, 0, MODE_LWMA, PRICE_WEIGHTED);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
+  int handle = iMA(symbol, tf, period, 0, MODE_LWMA, PRICE_WEIGHTED);
+  if (handle == INVALID_HANDLE)
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  double values[];
+  if (!CopyBuffer(handle, 0, 0, 2, values))
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  IndicatorRelease(handle);
+  return StringFormat("{\"data\":%f,\"success\":1}", values[0]);
 }
 
 // iRSI - Relative Strength Index
@@ -838,10 +848,19 @@ string FXiRSI(string symbol, string timeframe, int period)
   {
     return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
   }
-  double value = iRSI(symbol, tf, period, PRICE_WEIGHTED);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
+  int handle = iRSI(symbol, tf, period, PRICE_WEIGHTED);
+  if (handle == INVALID_HANDLE)
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  double values[];
+  if (!CopyBuffer(handle, 0, 0, 2, values))
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  IndicatorRelease(handle);
+  return StringFormat("{\"data\":%f,\"success\":1}", values[0]);
 }
-
 
 string FXiMomentum(string symbol, string timeframe, int period)
 {
@@ -857,10 +876,19 @@ string FXiMomentum(string symbol, string timeframe, int period)
   {
     return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
   }
-  double value = iMomentum(symbol, tf, period, PRICE_WEIGHTED);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
+  int handle = iMomentum(symbol, tf, period, PRICE_WEIGHTED);
+  if (handle == INVALID_HANDLE)
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  double values[];
+  if (!CopyBuffer(handle, 0, 0, 2, values))
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  IndicatorRelease(handle);
+  return StringFormat("{\"data\":%f,\"success\":1}", values[0]);
 }
-
 
 string FXiForce(string symbol, string timeframe, int period)
 {
@@ -876,6 +904,16 @@ string FXiForce(string symbol, string timeframe, int period)
   {
     return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
   }
-  double value = iForce(symbol, tf, period, MODE_LWMA, VOLUME_REAL);
-  return StringFormat("{\"data\":%f,\"success\":1}", value);
+  int handle = iForce(symbol, tf, period, MODE_LWMA, VOLUME_TICK);
+  if (handle == INVALID_HANDLE)
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  double values[];
+  if (!CopyBuffer(handle, 0, 0, 2, values))
+  {
+    return StringFormat("{\"success\":0,\"error\":%I64d}", GetLastError());
+  }
+  IndicatorRelease(handle);
+  return StringFormat("{\"data\":%f,\"success\":1}", values[0]);
 }
