@@ -9,9 +9,40 @@ from asyncio import StreamWriter
 from asyncio import StreamReader
 import hashlib
 import shlex
+import collections
+from typing import Dict, Tuple, Any
+import time
 
 BUNDLE_DIR = getattr(
     sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))
+
+    
+request_queues: Dict[str, collections.deque] = {}
+active_connections: Dict[str, Tuple[Any, Any, Any, Any, Any]] = {}  # key -> (proc, terminal_dir, is_ready, uid, sockets)
+
+def get_connection_uid(platform: str, username: str, server: str, password: str) -> str:
+    """Generate a unique key for connection based on platform, username, and server"""
+    return hashlib.sha256(f"{platform}:{username}:{server}:{password}".encode("utf-8")).hexdigest()
+
+def cleanup_connection(platform: str, username: str, server: str, password: str):
+    """Remove connection from active connections"""
+    uid = get_connection_uid(platform, username, server, password)
+    if uid in active_connections:
+        del active_connections[uid]
+    if uid in request_queues:
+        del request_queues[uid]
+
+async def enqueue_request(uid: str, request_data: Any):
+    """Add request to queue for the given uid"""
+    if uid not in request_queues:
+        request_queues[uid] = collections.deque()
+    request_queues[uid].append(request_data)
+
+async def dequeue_request(uid: str) -> Any:
+    """Get next request from queue for the given uid"""
+    if uid in request_queues and request_queues[uid]:
+        return request_queues[uid].popleft()
+    return None
 
 
 def start_mt4_terminal(username, password, server, gwport, uid):
@@ -20,7 +51,7 @@ def start_mt4_terminal(username, password, server, gwport, uid):
     safe_server = "".join(c if c.isalnum() else "_" for c in str(server))
     hash_pw = hashlib.md5(password.encode("utf-8")).hexdigest()
     terminal_dir = os.path.join(
-        ".sessions", "mt4", str(username), safe_server, uid
+        ".sessions", "mt4", str(username), safe_server, hash_pw
     )
     terminal = os.path.join(terminal_dir, "terminal.exe")
     config = os.path.join(terminal_dir, "session.conf")
@@ -65,7 +96,7 @@ def start_mt5_terminal(username, password, server, gwport, uid):
     safe_server = "".join(c if c.isalnum() else "_" for c in str(server))
     hash_pw = hashlib.md5(password.encode("utf-8")).hexdigest()
     terminal_dir = os.path.join(
-        ".sessions", "mt5", str(username), safe_server, uid
+        ".sessions", "mt5", str(username), safe_server, hash_pw
     )
     terminal = os.path.join(terminal_dir, "terminal64.exe")
     config = os.path.join(terminal_dir, "session.conf")
@@ -112,114 +143,132 @@ def start_mt5_terminal(username, password, server, gwport, uid):
     return Popen(terminal + " /config:session.conf" + " /portable=true", cwd=terminal_dir), terminal_dir
 
 
-def start_terminal(platform, username, password, server, gwport, uid):
+async def get_terminal(platform, username, password, server):
+    uid = get_connection_uid(platform, username, server, password)
+    if uid in active_connections and active_connections[uid] is not None:
+        return active_connections[uid]
+
+    proc = None
+    terminal_dir = None
+    gwserver = None
+    sockets = []
+
+    async def handle_conn(creader: StreamReader, cwriter: StreamWriter):
+        try:
+            cuid = (await creader.readline()).decode("utf8").strip()
+            print(f"Client UID: {cuid}")
+            if cuid != uid:
+                print("Invalid terminal uid. Force closing...")
+                return
+            active_connections[uid] = (active_connections[uid][0], active_connections[uid][1], True, uid, sockets)
+            last_request_at = time.time()
+            while True:
+                try:
+                    if (time.time() - last_request_at) > 60:
+                        print("No requests for 60 seconds. Closing terminal connection...")
+                        break
+                    if (cwriter.is_closing()):
+                        break
+                    req = await dequeue_request(uid)
+                    if req is None:
+                        await asyncio.sleep(0.1)
+                        continue
+                    request, req_writer = req
+                    params = shlex.split(request.decode().strip())
+                    if (len(params) < 1):
+                        continue
+                    if (params[0] == "CONNECT"):
+                        if params[1] != platform or params[2] != str(username) or params[3] != str(password) or params[4] != str(server):
+                            print("Mismatched connection parameters. Ignoring CONNECT request.")
+                            req_writer.write(b"{\"success\": 0, \"error\": \"Already connected\"}\r\n")
+                        else:
+                            req_writer.write(b"{\"success\": 1}\r\n")
+                        continue
+
+                    print(f"Forwarding request to terminal: {request.decode().strip()}")
+                    cwriter.write(request + b"\r\n")
+                    response = await creader.readline()
+                    req_writer.write(response)
+                    last_request_at = time.time()
+                except Exception as e:
+                    print(f"Error forwarding request to terminal: {request.decode().strip()}")
+                    print(f"Exception details: {e}")
+
+        except Exception as e:
+            print(f"Error handling connection: {e}")
+        finally:
+            if proc is not None:
+                print("Terminating terminal process...")
+                proc.terminate()
+
+    gwserver = await asyncio.start_server(
+        handle_conn, "127.0.0.1", 0
+    )
+    gwport = gwserver.sockets[0].getsockname()[1]  # Get the gateway port
+    
     if platform == 'mt4':
-        return start_mt4_terminal(username, password, server, gwport, uid)
+        proc, terminal_dir = start_mt4_terminal(username, password, server, gwport, uid)
     elif platform == 'mt5':
-        return start_mt5_terminal(username, password, server, gwport, uid)
+        proc, terminal_dir = start_mt5_terminal(username, password, server, gwport, uid)
     else:
         raise ValueError("Unsupported platform. Use 'mt4' or 'mt5'.")
+
+    async def monitor_process():
+        while proc.poll() is None:
+            await asyncio.sleep(1)
+        print("Terminal process has exited. Cleaning up...")
+        cleanup_connection(platform, username, server, password)
+        gwserver.close()
+        for socket in sockets:
+            socket.close()
+            
+    asyncio.create_task(monitor_process())
+    active_connections[uid] = (proc, terminal_dir, False, uid, sockets)
+
+    return active_connections[uid]
 
 
 async def handle_client(reader, writer):
     proc = None
     gwserver = None
-    state = {
-        "isconnected": False,
-    }
+    cuid = None
     try:
         writer.write(b"Welcome to the terminal gateway!\r\n")
-        data = await reader.readline()
-        print(f"Received data: {data.decode().strip()}")
-        if not data:
-            writer.close()
-            await writer.wait_closed()
-            return
-        # Parse the received data as command line arguments
-        params = shlex.split(data.decode().strip())
-        if len(params) != 5:
-            writer.write(b"ERR Invalid parameters\n")
-            await writer.drain()
-            writer.close()
-            await writer.wait_closed()
-            return
-        connect, platform, username, password, server = params
-        if connect != "CONNECT":
-            writer.write(b"ERR Invalid command\n")
-            await writer.drain()
-            writer.close()
-            await writer.wait_closed()
-            return
-
-        uid = os.urandom(16).hex()  # Generate a random UID
-        
-        async def handle_bridge_client(creader: StreamReader, cwriter: StreamWriter):
-            try:
-                cuid = (await creader.readline()).decode("utf8").strip()
-                print(f"Client UID: {cuid}")
-                if cuid != uid:
-                    print("Invalid terminal uid. Force closing...")
-                    return
-                state["isconnected"] = True
-                writer.write(b"{\"success\": 1}\r\n")
-                
-                async def pipe(src, dst):
-                    try:
-                        while not src.at_eof():
-                            data = await src.read(4096)
-                            if not data:
-                                break
-                            dst.write(data)
-                            await asyncio.sleep(0.01)
-                    except Exception:
-                        pass
-
-                task1 = asyncio.create_task(pipe(reader, cwriter))
-                task2 = asyncio.create_task(pipe(creader, writer))
-                await asyncio.wait([task1, task2], return_when=asyncio.FIRST_COMPLETED)
-                cwriter.close()
+        while True:
+            request = await reader.readline()
+            print(f"Received data: {request.decode().strip()}")
+            if not request:
                 writer.close()
-            except:
-                pass
-            finally:
-                gwserver.close()
+                await writer.wait_closed()
+                return
+            params = shlex.split(request.decode().strip())
+            if (len(params) < 1):
+                await writer.drain()
+                writer.close()
+                return
 
-        gwserver = await asyncio.start_server(
-            handle_bridge_client, "127.0.0.1", 0
-        )
-        gwport = gwserver.sockets[0].getsockname()[1]  # Get the gateway port
-        proc, terminal_dir = start_terminal(platform, username, password, server, gwport, uid)
+            if cuid is not None and active_connections.get(cuid) is None:
+                cuid = None
+                writer.close()
+                return
 
-        timeout = 30  # seconds
-        while not state["isconnected"] and timeout > 0:
-            timeout -= 1
-            await asyncio.sleep(1)
+            if cuid is None and params[0] != "CONNECT":
+                writer.write(b"{\"error\": \"Not connected\", \"success\": 0}\n")
+                await writer.drain()
+                writer.close()
+                return
 
-        if state["isconnected"]:
-            await gwserver.wait_closed()
+            if cuid is None and params[0] == "CONNECT":
+                _, platform, username, password, server = params
+                proc, terminal_dir, is_ready, cuid, sockets = await get_terminal(platform, username, password, server)
+                sockets.append(writer)
+                print(f"Using terminal UID: {cuid}")
+
+            await enqueue_request(cuid, (request, writer))
 
     except Exception as e:
-        writer.write(f"ERR {e}\n".encode())
-        await writer.drain()
-    finally:
-        print("Closing connection")
-        writer.close()
-        await writer.wait_closed()
-        if proc is not None:
-            proc.terminate()
-            try:
-                await proc.wait(timeout=5)
-            except Exception:
-                proc.kill()
-            while True:
-                try:    
-                    if not os.path.exists(terminal_dir):
-                        break
-                    await asyncio.sleep(10)  # Wait a bit for terminal to release files
-                    shutil.rmtree(terminal_dir)
-                    break
-                except Exception as e:
-                    pass
+        print(f"Error handling client: {e}")
+        
 
 async def main():
     parser = argparse.ArgumentParser()
