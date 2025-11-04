@@ -227,56 +227,80 @@ async def get_terminal(platform, username, password, server):
 
     return active_connections[uid]
 
+def create_handle_client(auth: str = None):
+    async def handle_client(reader, writer):
+        proc = None
+        gwserver = None
+        cuid = None
+        is_authenticated = False
+        try:
+            writer.write(b"Welcome to the terminal gateway!\r\n")
+            while True:
+                request = await reader.readline()
+                print(f"Received data: {request.decode().strip()}")
+                if not request:
+                    writer.close()
+                    await writer.wait_closed()
+                    return
+                params = shlex.split(request.decode().strip())
+                if (len(params) < 1):
+                    await writer.drain()
+                    writer.close()
+                    return
 
-async def handle_client(reader, writer):
-    proc = None
-    gwserver = None
-    cuid = None
-    try:
-        writer.write(b"Welcome to the terminal gateway!\r\n")
-        while True:
-            request = await reader.readline()
-            print(f"Received data: {request.decode().strip()}")
-            if not request:
-                writer.close()
-                await writer.wait_closed()
-                return
-            params = shlex.split(request.decode().strip())
-            if (len(params) < 1):
-                await writer.drain()
-                writer.close()
-                return
+                command = params[0]
+                if auth is not None and not is_authenticated and command != "AUTH":
+                    writer.write(b"{\"error\": \"Not authenticated\", \"success\": 0}\r\n")
+                    await writer.drain()
+                    writer.close()
+                    return
+                
+                if command == "AUTH":
+                    _, provided_auth = params
+                    if provided_auth == auth:
+                        is_authenticated = True
+                        writer.write(b"{\"success\": 1}\r\n")
+                    else:
+                        writer.write(b"{\"error\": \"Authentication failed\", \"success\": 0}\r\n")
+                        await writer.drain()
+                        writer.close()
+                        return
+                    await writer.drain()
+                    continue
 
-            if cuid is not None and active_connections.get(cuid) is None:
-                cuid = None
-                writer.close()
-                return
 
-            if cuid is None and params[0] != "CONNECT":
-                writer.write(b"{\"error\": \"Not connected\", \"success\": 0}\n")
-                await writer.drain()
-                writer.close()
-                return
+                if cuid is not None and active_connections.get(cuid) is None:
+                    cuid = None
+                    writer.close()
+                    return
 
-            if cuid is None and params[0] == "CONNECT":
-                _, platform, username, password, server = params
-                proc, terminal_dir, is_ready, cuid, sockets = await get_terminal(platform, username, password, server)
-                sockets.append(writer)
-                print(f"Using terminal UID: {cuid}")
+                if cuid is None and params[0] != "CONNECT":
+                    writer.write(b"{\"error\": \"Not connected\", \"success\": 0}\n")
+                    await writer.drain()
+                    writer.close()
+                    return
 
-            await enqueue_request(cuid, (request, writer))
+                if cuid is None and params[0] == "CONNECT":
+                    _, platform, username, password, server = params
+                    proc, terminal_dir, is_ready, cuid, sockets = await get_terminal(platform, username, password, server)
+                    sockets.append(writer)
+                    print(f"Using terminal UID: {cuid}")
 
-    except Exception as e:
-        print(f"Error handling client: {e}")
-        
+                await enqueue_request(cuid, (request, writer))
+
+        except Exception as e:
+            print(f"Error handling client: {e}")
+
+    return handle_client
 
 async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8888)
+    parser.add_argument("--auth-token", default="Fx@2025!#")
     args = parser.parse_args()
 
-    server = await asyncio.start_server(handle_client, args.host, args.port)
+    server = await asyncio.start_server(create_handle_client(args.auth_token), args.host, args.port)
     print(f"Server running on {args.host}:{args.port}")
     async with server:
         await server.serve_forever()
