@@ -164,8 +164,8 @@ async def get_terminal(platform, username, password, server):
             last_request_at = time.time()
             while True:
                 try:
-                    if (time.time() - last_request_at) > 60:
-                        print("No requests for 60 seconds. Closing terminal connection...")
+                    if (time.time() - last_request_at) > 600:
+                        print("No requests for 600 seconds. Closing terminal connection...")
                         break
                     if (cwriter.is_closing()):
                         break
