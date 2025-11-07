@@ -121,8 +121,7 @@ string FXAccountInfo()
   result += StringFormat("\"server\":\"%s\",", AccountInfoString(ACCOUNT_SERVER));
   result += StringFormat("\"currency\":\"%s\",", AccountInfoString(ACCOUNT_CURRENCY));
   result += StringFormat("\"company\":\"%s\",", AccountInfoString(ACCOUNT_COMPANY));
-  result += StringFormat("\"is_demo\":%I64d,", isDemo);
-  result += StringFormat("\"success\":%I64d", true);
+  result += StringFormat("\"is_demo\":%I64d", isDemo);
   result += "}";
   return StringFormat("{\"data\":%s, \"success\":%I64d}", result, true);
 }
