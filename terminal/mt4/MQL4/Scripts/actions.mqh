@@ -98,7 +98,7 @@ string FXAccountInfo()
   result += StringFormat("\"is_demo\":%I64d,", IsDemo());
   result += StringFormat("\"success\":%I64d", true);
   result += "}";
-  return result;
+  return StringFormat("{\"data\":%s, \"success\":%I64d}", result, true);
 }
 
 string FXSymbols()
@@ -849,7 +849,6 @@ string FXiRSI(string symbol, string timeframe, int period = 14)
   return StringFormat("{\"data\":%f,\"success\":1}", value);
 }
 
-
 string FXiMomentum(string symbol, string timeframe, int period = 14)
 {
   if (!SymbolSelect(symbol, true))
@@ -883,4 +882,3 @@ string FXiForce(string symbol, string timeframe, int period = 14)
   double value = iForce(symbol, tf, period, MODE_LWMA, PRICE_WEIGHTED, 0);
   return StringFormat("{\"data\":%f,\"success\":1}", value);
 }
-

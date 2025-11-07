@@ -124,7 +124,7 @@ string FXAccountInfo()
   result += StringFormat("\"is_demo\":%I64d,", isDemo);
   result += StringFormat("\"success\":%I64d", true);
   result += "}";
-  return result;
+  return StringFormat("{\"data\":%s, \"success\":%I64d}", result, true);
 }
 
 string FXSymbols()
