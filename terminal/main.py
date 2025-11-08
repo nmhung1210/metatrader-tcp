@@ -58,11 +58,12 @@ def start_mt4_terminal(username, password, server, gwport, uid):
     param = os.path.join(terminal_dir, "MQL4", "Presets", "param.set")
     try:
         shutil.copytree(
-            os.path.abspath(os.path.join(BUNDLE_DIR, "mt4")), terminal_dir
+            os.path.abspath(os.path.join(BUNDLE_DIR, "mt4")), terminal_dir,
+            dirs_exist_ok=True
         )
-
     except:
         pass
+    
     with open(param, "w", encoding="utf-8") as fparam:
         fparam.write(
             "\n".join(["PORT=" + str(gwport), "UUID=" + str(uid)])
@@ -103,7 +104,8 @@ def start_mt5_terminal(username, password, server, gwport, uid):
     param = os.path.join(terminal_dir, "config", "services.ini")
     try:
         shutil.copytree(
-            os.path.abspath(os.path.join(BUNDLE_DIR, "mt5")), terminal_dir
+            os.path.abspath(os.path.join(BUNDLE_DIR, "mt5")), terminal_dir,
+            dirs_exist_ok=True
         )
     except:
         pass
