@@ -66,6 +66,14 @@ string getDateTime()
   return TimeToString(TimeCurrent(), TIME_DATE | TIME_SECONDS);
 }
 
+string escapeJsonString(const string str)
+{
+  string result = str;
+  StringReplace(result, "\\", "\\\\");
+  StringReplace(result, "\"", "\\\"");
+  return result;
+}
+
 double NormalizePrice(string symbol, double price)
 {
   double tickSize = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
@@ -91,10 +99,10 @@ string FXAccountInfo()
   result += StringFormat("\"margin_level\":%f,", AccountInfoDouble(ACCOUNT_MARGIN_LEVEL));
   result += StringFormat("\"margin_so_call\":%f,", AccountInfoDouble(ACCOUNT_MARGIN_SO_CALL));
   result += StringFormat("\"margin_so_so\":%f,", AccountInfoDouble(ACCOUNT_MARGIN_SO_SO));
-  result += StringFormat("\"name\":\"%s\",", AccountInfoString(ACCOUNT_NAME));
-  result += StringFormat("\"server\":\"%s\",", AccountInfoString(ACCOUNT_SERVER));
-  result += StringFormat("\"currency\":\"%s\",", AccountInfoString(ACCOUNT_CURRENCY));
-  result += StringFormat("\"company\":\"%s\",", AccountInfoString(ACCOUNT_COMPANY));
+  result += StringFormat("\"name\":\"%s\",",  escapeJsonString(AccountInfoString(ACCOUNT_NAME)));
+  result += StringFormat("\"server\":\"%s\",", escapeJsonString(AccountInfoString(ACCOUNT_SERVER)));
+  result += StringFormat("\"currency\":\"%s\",", escapeJsonString(AccountInfoString(ACCOUNT_CURRENCY)));
+  result += StringFormat("\"company\":\"%s\",", escapeJsonString(AccountInfoString(ACCOUNT_COMPANY)));
   result += StringFormat("\"is_demo\":%I64d", IsDemo());
   result += "}";
   return StringFormat("{\"data\":%s, \"success\":%I64d}", result, true);
@@ -107,7 +115,7 @@ string FXSymbols()
   result += "[";
   for (int i = 0; i < total; i++)
   {
-    result += StringFormat("\"%s\"", SymbolName(i, false));
+    result += StringFormat("\"%s\"", escapeJsonString(SymbolName(i, false)));
     if (i < total - 1)
       result += ",";
   }
@@ -127,9 +135,6 @@ string FXSymbolInfo(const string symbol)
   {
     return "{\"success\":0,\"error\":404}";
   }
-  string description = SymbolInfoString(symbol, SYMBOL_DESCRIPTION);
-  StringReplace(description, "=", "_");
-  StringReplace(description, ",", "_");
 
   string result = "{";
   result += StringFormat("\"data\":{\"time\":%I64d,", (long)SymbolInfoInteger(symbol, SYMBOL_TIME));
@@ -158,11 +163,11 @@ string FXSymbolInfo(const string symbol)
   result += StringFormat("\"swap_short\":%f,", SymbolInfoDouble(symbol, SYMBOL_SWAP_SHORT));
   result += StringFormat("\"margin_initial\":%f,", SymbolInfoDouble(symbol, SYMBOL_MARGIN_INITIAL));
   result += StringFormat("\"margin_maintenance\":%f,", SymbolInfoDouble(symbol, SYMBOL_MARGIN_MAINTENANCE));
-  result += StringFormat("\"currency_base\":\"%s\",", SymbolInfoString(symbol, SYMBOL_CURRENCY_BASE));
-  result += StringFormat("\"currency_profit\":\"%s\",", SymbolInfoString(symbol, SYMBOL_CURRENCY_PROFIT));
-  result += StringFormat("\"currency_margin\":\"%s\",", SymbolInfoString(symbol, SYMBOL_CURRENCY_MARGIN));
-  result += StringFormat("\"description\":\"%s\",", description);
-  result += StringFormat("\"path\":\"%s\"", SymbolInfoString(symbol, SYMBOL_PATH));
+  result += StringFormat("\"currency_base\":\"%s\",", escapeJsonString(SymbolInfoString(symbol, SYMBOL_CURRENCY_BASE)));
+  result += StringFormat("\"currency_profit\":\"%s\",", escapeJsonString(SymbolInfoString(symbol, SYMBOL_CURRENCY_PROFIT)));
+  result += StringFormat("\"currency_margin\":\"%s\",", escapeJsonString(SymbolInfoString(symbol, SYMBOL_CURRENCY_MARGIN)));
+  result += StringFormat("\"description\":\"%s\",", escapeJsonString(SymbolInfoString(symbol, SYMBOL_DESCRIPTION)));
+  result += StringFormat("\"path\":\"%s\"", escapeJsonString(SymbolInfoString(symbol, SYMBOL_PATH)));
   result += "},\"success\":1}";
   return result;
 }
@@ -346,7 +351,7 @@ string FXOrders(string symbol = "", long offset = 0, long limit = 20, long magic
       }
       result += "{";
       result += StringFormat("\"ticket\":%I64d,", OrderTicket());
-      result += StringFormat("\"type\":\"%s\",", OrderTypeString(OrderType()));
+      result += StringFormat("\"type\":\"%s\",", escapeJsonString(OrderTypeString(OrderType())));
       result += StringFormat("\"price\":%f,", OrderOpenPrice());
       result += StringFormat("\"volume\":%f,", OrderLots());
       result += StringFormat("\"sl\":%f,", OrderStopLoss());
@@ -441,8 +446,8 @@ string FXPositions(string symbol = "", long offset = 0, long limit = 20, long ma
         result += ",";
       result += "{";
       result += StringFormat("\"ticket\":%I64d,", OrderTicket());
-      result += StringFormat("\"type\":\"%s\",", OrderTypeString(OrderType()));
-      result += StringFormat("\"symbol\":\"%s\",", OrderSymbol());
+      result += StringFormat("\"type\":\"%s\",", escapeJsonString(OrderTypeString(OrderType())));
+      result += StringFormat("\"symbol\":\"%s\",", escapeJsonString(OrderSymbol()));
       result += StringFormat("\"price\":%f,", OrderOpenPrice());
       result += StringFormat("\"volume\":%f,", OrderLots());
       result += StringFormat("\"profit\":%f,", OrderProfit());
@@ -747,8 +752,8 @@ string FXPositionHistory(string symbol = "", long offset = 0, long limit = 20, l
         result += ",";
       result += "{";
       result += StringFormat("\"ticket\":%I64d,", deal_ticket);
-      result += StringFormat("\"type\":\"%s\",", OrderTypeString(OrderType()));
-      result += StringFormat("\"symbol\":\"%s\",", OrderSymbol());
+      result += StringFormat("\"type\":\"%s\",", escapeJsonString(OrderTypeString(OrderType())));
+      result += StringFormat("\"symbol\":\"%s\",", escapeJsonString(OrderSymbol()));
       result += StringFormat("\"open_price\":%f,", OrderOpenPrice());
       result += StringFormat("\"close_price\":%f,", OrderClosePrice());
       result += StringFormat("\"volume\":%f,", OrderLots());
