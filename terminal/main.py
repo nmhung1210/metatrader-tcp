@@ -239,11 +239,13 @@ def create_handle_client(auth: str = None):
             writer.write(b"Welcome to the terminal gateway!\r\n")
             while True:
                 request = await reader.readline()
-                print(f"Received data: {request.decode().strip()}")
                 if not request:
                     writer.close()
                     await writer.wait_closed()
                     return
+                    
+                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [{writer.get_extra_info('peername')[0]}] Received data: {request.decode().strip()}")
+
                 params = shlex.split(request.decode().strip())
                 if (len(params) < 1):
                     await writer.drain()
