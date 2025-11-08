@@ -154,6 +154,7 @@ async def get_terminal(platform, username, password, server):
     terminal_dir = None
     gwserver = None
     sockets = []
+    active_connections[uid] = (proc, terminal_dir, False, uid, sockets)
 
     async def handle_conn(creader: StreamReader, cwriter: StreamWriter):
         try:
