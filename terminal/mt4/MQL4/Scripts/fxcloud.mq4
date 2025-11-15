@@ -37,7 +37,7 @@ string OnMessage(string msg)
   string params[];
   ArrayCopy(params, args, 0, 2, WHOLE_ARRAY);
   string result = OnAction(action, params);
-  return StringFormat("%s %s", req_id, result);
+  return req_id + " " + result;
 }
 
 double getDouble(string &args[], int index, double defaultValue = 0.0)
