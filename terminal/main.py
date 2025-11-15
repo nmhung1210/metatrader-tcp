@@ -17,11 +17,59 @@ BUNDLE_DIR = getattr(
     sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))   
 
 
+def init_mt4_terminal():
+    terminal_dir = os.path.join(
+        ".sessions", "default", "mt4"
+    )
+    terminal = os.path.join(terminal_dir, "terminal.exe")
+    try:
+        shutil.copytree(
+            os.path.abspath(os.path.join(BUNDLE_DIR, "mt4")), terminal_dir,
+            dirs_exist_ok=True
+        )
+    except:
+        pass
+    return Popen([terminal, "/portable"], cwd=terminal_dir)
+
+def init_mt5_terminal():
+    terminal_dir = os.path.join(
+        ".sessions", "default", "mt5"
+    )
+    terminal = os.path.join(terminal_dir, "terminal64.exe")
+    try:
+        shutil.copytree(
+            os.path.abspath(os.path.join(BUNDLE_DIR, "mt5")), terminal_dir,
+            dirs_exist_ok=True
+        )
+    except:
+        pass
+    return Popen([terminal, "/portable=true"], cwd=terminal_dir)
+
+def init_terminal():
+    async def start():
+        mt4_proc = init_mt4_terminal()
+        mt5_proc = init_mt5_terminal()
+        await asyncio.sleep(120)
+        mt4_proc.terminate()
+        mt5_proc.terminate()
+
+    async def wait_close():
+        await start()
+        while True:
+            await asyncio.sleep(36000)
+            await start()
+
+    asyncio.create_task(wait_close())
+
+
 def start_mt4_terminal(username, password, server, gwport, uid):
     print(
         f"Starting MT4 terminal for {username} on {server} with gwport {gwport}")
     safe_server = "".join(c if c.isalnum() else "_" for c in str(server))
     hash_pw = hashlib.md5(password.encode("utf-8")).hexdigest()
+    default_terminal_dir = os.path.join(
+        ".sessions", "default", "mt4"
+    )
     terminal_dir = os.path.join(
         ".sessions", "mt4", str(username), safe_server, uid
     )
@@ -30,7 +78,7 @@ def start_mt4_terminal(username, password, server, gwport, uid):
     param = os.path.join(terminal_dir, "MQL4", "Presets", "param.set")
     try:
         shutil.copytree(
-            os.path.abspath(os.path.join(BUNDLE_DIR, "mt4")), terminal_dir,
+            default_terminal_dir, terminal_dir,
             dirs_exist_ok=True
         )
     except:
@@ -68,6 +116,9 @@ def start_mt5_terminal(username, password, server, gwport, uid):
         f"Starting MT5 terminal for {username} on {server} with gwport {gwport}")
     safe_server = "".join(c if c.isalnum() else "_" for c in str(server))
     hash_pw = hashlib.md5(password.encode("utf-8")).hexdigest()
+    default_terminal_dir = os.path.join(
+        ".sessions", "default", "mt5"
+    )
     terminal_dir = os.path.join(
         ".sessions", "mt5", str(username), safe_server, uid
     )
@@ -76,7 +127,7 @@ def start_mt5_terminal(username, password, server, gwport, uid):
     param = os.path.join(terminal_dir, "config", "services.ini")
     try:
         shutil.copytree(
-            os.path.abspath(os.path.join(BUNDLE_DIR, "mt5")), terminal_dir,
+            default_terminal_dir, terminal_dir,
             dirs_exist_ok=True
         )
     except:
@@ -278,6 +329,8 @@ async def main():
     parser.add_argument("--port", type=int, default=8888)
     parser.add_argument("--auth-token", default="Fx@2025!#")
     args = parser.parse_args()
+
+    init_terminal()
 
     server = await asyncio.start_server(create_handle_client(args.auth_token), args.host, args.port)
     print(f"Server running on {args.host}:{args.port}")
