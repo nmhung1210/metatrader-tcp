@@ -10,39 +10,11 @@ from asyncio import StreamReader
 import hashlib
 import shlex
 import collections
-from typing import Dict, Tuple, Any
 import time
+import uuid
 
 BUNDLE_DIR = getattr(
-    sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))
-
-    
-request_queues: Dict[str, collections.deque] = {}
-active_connections: Dict[str, Tuple[Any, Any, Any, Any, Any]] = {}  # key -> (proc, terminal_dir, is_ready, uid, sockets)
-
-def get_connection_uid(platform: str, username: str, server: str, password: str) -> str:
-    """Generate a unique key for connection based on platform, username, and server"""
-    return hashlib.sha256(f"{platform}:{username}:{server}:{password}".encode("utf-8")).hexdigest()
-
-def cleanup_connection(platform: str, username: str, server: str, password: str):
-    """Remove connection from active connections"""
-    uid = get_connection_uid(platform, username, server, password)
-    if uid in active_connections:
-        del active_connections[uid]
-    if uid in request_queues:
-        del request_queues[uid]
-
-async def enqueue_request(uid: str, request_data: Any):
-    """Add request to queue for the given uid"""
-    if uid not in request_queues:
-        request_queues[uid] = collections.deque()
-    request_queues[uid].append(request_data)
-
-async def dequeue_request(uid: str) -> Any:
-    """Get next request from queue for the given uid"""
-    if uid in request_queues and request_queues[uid]:
-        return request_queues[uid].popleft()
-    return None
+    sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))   
 
 
 def start_mt4_terminal(username, password, server, gwport, uid):
@@ -51,7 +23,7 @@ def start_mt4_terminal(username, password, server, gwport, uid):
     safe_server = "".join(c if c.isalnum() else "_" for c in str(server))
     hash_pw = hashlib.md5(password.encode("utf-8")).hexdigest()
     terminal_dir = os.path.join(
-        ".sessions", "mt4", str(username), safe_server, hash_pw
+        ".sessions", "mt4", str(username), safe_server, uid
     )
     terminal = os.path.join(terminal_dir, "terminal.exe")
     config = os.path.join(terminal_dir, "session.conf")
@@ -97,7 +69,7 @@ def start_mt5_terminal(username, password, server, gwport, uid):
     safe_server = "".join(c if c.isalnum() else "_" for c in str(server))
     hash_pw = hashlib.md5(password.encode("utf-8")).hexdigest()
     terminal_dir = os.path.join(
-        ".sessions", "mt5", str(username), safe_server, hash_pw
+        ".sessions", "mt5", str(username), safe_server, uid
     )
     terminal = os.path.join(terminal_dir, "terminal64.exe")
     config = os.path.join(terminal_dir, "session.conf")
@@ -145,57 +117,58 @@ def start_mt5_terminal(username, password, server, gwport, uid):
     return Popen(terminal + " /config:session.conf" + " /portable=true", cwd=terminal_dir), terminal_dir
 
 
-async def get_terminal(platform, username, password, server):
-    uid = get_connection_uid(platform, username, server, password)
-    if uid in active_connections and active_connections[uid] is not None:
-        return active_connections[uid]
-
+async def get_terminal(platform, username, password, server, client_writer, client_reader, connect_id):
+    uid = str(uuid.uuid4())
     proc = None
     terminal_dir = None
     gwserver = None
-    sockets = []
-    active_connections[uid] = (proc, terminal_dir, False, uid, sockets)
 
-    async def handle_conn(creader: StreamReader, cwriter: StreamWriter):
+    async def handle_conn(creader: StreamReader, cwriter: StreamWriter):       
         try:
             cuid = (await creader.readline()).decode("utf8").strip()
             print(f"Client UID: {cuid}")
             if cuid != uid:
                 print("Invalid terminal uid. Force closing...")
                 return
-            active_connections[uid] = (active_connections[uid][0], active_connections[uid][1], True, uid, sockets)
-            last_request_at = time.time()
-            while True:
-                try:
-                    if (time.time() - last_request_at) > 600:
-                        print("No requests for 600 seconds. Closing terminal connection...")
-                        break
-                    if (cwriter.is_closing()):
-                        break
-                    req = await dequeue_request(uid)
-                    if req is None:
-                        await asyncio.sleep(0.1)
-                        continue
-                    request, req_writer = req
-                    params = shlex.split(request.decode().strip())
-                    if (len(params) < 1):
-                        continue
-                    if (params[0] == "CONNECT"):
-                        if params[1] != platform or params[2] != str(username) or params[3] != str(password) or params[4] != str(server):
-                            print("Mismatched connection parameters. Ignoring CONNECT request.")
-                            req_writer.write(b"{\"success\": 0, \"error\": \"Already connected\"}\r\n")
-                        else:
-                            req_writer.write(b"{\"success\": 1}\r\n")
-                        continue
 
-                    print(f"Forwarding request to terminal: {request.decode().strip()}")
-                    cwriter.write(request + b"\r\n")
-                    response = await creader.readline()
-                    req_writer.write(response)
-                    last_request_at = time.time()
-                except Exception as e:
-                    print(f"Error forwarding request to terminal: {request.decode().strip()}")
-                    print(f"Exception details: {e}")
+            # write connect result to client
+            client_writer.write(connect_id.encode() + b" {\"success\": 1}\r\n")
+            await client_writer.drain()
+
+            last_request_at = time.time()   
+            while True:
+                if (time.time() - last_request_at) > 600:
+                    print("No requests for 600 seconds. Closing terminal connection...")
+                    break
+
+                if (cwriter.is_closing()):
+                    break
+
+                request = await client_reader.readline()
+                if not request:
+                    await client_writer.drain() 
+                    client_writer.close()
+                    break
+
+                params = shlex.split(request.decode().strip())
+                if (len(params) < 2):
+                    await client_writer.drain()
+                    client_writer.close()
+                    return
+
+                print(f"Forwarding request to terminal: {request.decode().strip()}")
+                cwriter.write(request + b"\r\n")
+                await cwriter.drain()
+
+                # read for response
+                response = await creader.readline()
+                
+                client_writer.write(response)
+                await client_writer.drain()
+
+                # update last request time
+                last_request_at = time.time()
+                
 
         except Exception as e:
             print(f"Error handling connection: {e}")
@@ -203,6 +176,10 @@ async def get_terminal(platform, username, password, server):
             if proc is not None:
                 print("Terminating terminal process...")
                 proc.terminate()
+            if gwserver is not None:
+                gwserver.close()
+            if client_writer is not None:
+                client_writer.close()
 
     gwserver = await asyncio.start_server(
         handle_conn, "127.0.0.1", 0
@@ -220,80 +197,77 @@ async def get_terminal(platform, username, password, server):
         while proc.poll() is None:
             await asyncio.sleep(1)
         print("Terminal process has exited. Cleaning up...")
-        cleanup_connection(platform, username, server, password)
-        gwserver.close()
-        for socket in sockets:
-            socket.close()
+        while True:
+            await asyncio.sleep(10)
+            if terminal_dir and os.path.exists(terminal_dir):
+                try:
+                    shutil.rmtree(terminal_dir)
+                    print(f"Removed terminal directory: {terminal_dir}")
+                    break
+                except Exception as e:
+                    print(f"Error removing terminal directory: {e}")
             
     asyncio.create_task(monitor_process())
-    active_connections[uid] = (proc, terminal_dir, False, uid, sockets)
 
-    return active_connections[uid]
+    return proc, terminal_dir
 
 def create_handle_client(auth: str = None):
     async def handle_client(reader, writer):
-        proc = None
-        gwserver = None
-        cuid = None
-        is_authenticated = False
         try:
-            writer.write(b"Welcome to the terminal gateway!\r\n")
-            while True:
-                request = await reader.readline()
-                if not request:
-                    writer.close()
-                    await writer.wait_closed()
-                    return
-                    
-                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [{writer.get_extra_info('peername')[0]}] Received data: {request.decode().strip()}")
+            writer.write(b"Welcome to the terminal gateway!\r\n")           
+            auth_request = await reader.readline()
+            if not auth_request:
+                writer.close()
+                await writer.wait_closed()
+                return
 
-                params = shlex.split(request.decode().strip())
-                if (len(params) < 1):
+            params = shlex.split(auth_request.decode().strip()) 
+            if len(params) < 3:
+                writer.write(b" { \"error\": \"Invalid authentication request\", \"success\": 0}\r\n")
+                await writer.drain()
+                writer.close()
+                return
+
+            req_id, auth_cmd, token  = params
+            if auth_cmd == "AUTH":
+                if token == auth:
+                    writer.write(req_id.encode() + b" {\"success\": 1}\r\n")
+                else:
+                    writer.write(req_id.encode() + b" {\"error\": \"Authentication failed\", \"success\": 0}\r\n")
                     await writer.drain()
                     writer.close()
                     return
+            else:
+                writer.write(req_id.encode() + b" {\"error\": \"Not authenticated\", \"success\": 0}\r\n")
+                await writer.drain()
+                writer.close()
+                return
 
-                command = params[0]
-                if auth is not None and not is_authenticated and command != "AUTH":
-                    writer.write(b"{\"error\": \"Not authenticated\", \"success\": 0}\r\n")
-                    await writer.drain()
-                    writer.close()
-                    return
-                
-                if command == "AUTH":
-                    _, provided_auth = params
-                    if provided_auth == auth:
-                        is_authenticated = True
-                        writer.write(b"{\"success\": 1}\r\n")
-                    else:
-                        writer.write(b"{\"error\": \"Authentication failed\", \"success\": 0}\r\n")
-                        await writer.drain()
-                        writer.close()
-                        return
-                    await writer.drain()
-                    continue
+            
+            connect_request = await reader.readline()
+            if not connect_request:
+                writer.close()
+                await writer.wait_closed()
+                return
+            
+            params = shlex.split(connect_request.decode().strip())
+            if len(params) < 6:
+                writer.write(b" { \"error\": \"Invalid connect request\", \"success\": 0}\r\n")
+                await writer.drain()
+                writer.close()
+                return
 
-
-                if cuid is not None and active_connections.get(cuid) is None:
-                    cuid = None
-                    writer.close()
-                    return
-
-                if cuid is None and params[0] != "CONNECT":
-                    writer.write(b"{\"error\": \"Not connected\", \"success\": 0}\n")
-                    await writer.drain()
-                    writer.close()
-                    return
-
-                if cuid is None and params[0] == "CONNECT":
-                    _, platform, username, password, server = params
-                    proc, terminal_dir, is_ready, cuid, sockets = await get_terminal(platform, username, password, server)
-                    sockets.append(writer)
-                    print(f"Using terminal UID: {cuid}")
-
-                await enqueue_request(cuid, (request, writer))
+            connect_id,  connect_cmd, platform, username, password, server = params
+            if connect_cmd == "CONNECT":
+                await get_terminal(platform, username, password, server, writer, reader, connect_id)
+            else:
+                writer.write(connect_id.encode() + b" {\"error\": \"Invalid command\", \"success\": 0}\r\n")
+                await writer.drain()
+                writer.close()
+                return
 
         except Exception as e:
+            writer.close()
             print(f"Error handling client: {e}")
 
     return handle_client

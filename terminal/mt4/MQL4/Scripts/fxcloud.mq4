@@ -28,15 +28,43 @@ string OnMessage(string msg)
 {
   string args[];
   long len = StringSplit(msg, StringGetCharacter(" ", 0), args);
-  if (len <= 0)
+  if (len <= 1)
   {
     return "";
   }
-  string action = args[0];
+  string req_id = args[0];
+  string action = args[1];
   string params[];
-  ArrayCopy(params, args, 0, 1, WHOLE_ARRAY);
+  ArrayCopy(params, args, 0, 2, WHOLE_ARRAY);
   string result = OnAction(action, params);
-  return StringFormat("%s", result);
+  return StringFormat("%s %s", req_id, result);
+}
+
+double getDouble(string &args[], int index, double defaultValue = 0.0)
+{
+  if (index >= ArraySize(args))
+  {
+    return defaultValue;
+  }
+  return StringToDouble(args[index]);
+}
+
+int getInteger(string &args[], int index, int defaultValue = 0)
+{
+  if (index >= ArraySize(args))
+  {
+    return defaultValue;
+  }
+  return StringToInteger(args[index]);
+}
+
+string getString(string &args[], int index, string defaultValue = "")
+{
+  if (index >= ArraySize(args))
+  {
+    return defaultValue;
+  }
+  return args[index];
 }
 
 string OnAction(string action, string &args[])
@@ -51,167 +79,165 @@ string OnAction(string action, string &args[])
   }
   if (action == "SymbolInfo")
   {
-    return FXSymbolInfo(args[0]);
+    return FXSymbolInfo(
+      getString(args, 0)
+    );
   }
   //
   if (action == "BuyLimit")
   {
     return FXBuyLimit(
-        args[0],                   // symbol
-        StringToDouble(args[1]),   // volume
-        StringToDouble(args[2]),   // price
-        StringToDouble(args[3]),   // sl
-        StringToDouble(args[4]),   // tp
-        StringToInteger(args[5])); // magic
+        getString(args, 0),   // symbol
+        getDouble(args, 1),   // volume
+        getDouble(args, 2),   // price
+        getDouble(args, 3),   // sl
+        getDouble(args, 4),   // tp
+        getInteger(args, 5)); // magic
   }
   //
   if (action == "SellLimit")
   {
     return FXSellLimit(
-        args[0],                   // symbol
-        StringToDouble(args[1]),   // volume
-        StringToDouble(args[2]),   // price
-        StringToDouble(args[3]),   // sl
-        StringToDouble(args[4]),   // tp
-        StringToInteger(args[5])); // magic
+        getString(args, 0),   // symbol
+        getDouble(args, 1),   // volume
+        getDouble(args, 2),   // price
+        getDouble(args, 3),   // sl
+        getDouble(args, 4),   // tp
+        getInteger(args, 5)); // magic
   }
 
   //
   if (action == "BuyStop")
   {
     return FXBuyStop(
-        args[0],                   // symbol
-        StringToDouble(args[1]),   // volume
-        StringToDouble(args[2]),   // price
-        StringToDouble(args[3]),   // sl
-        StringToDouble(args[4]),   // tp
-        StringToInteger(args[5])); // magic
+        getString(args, 0),   // symbol
+        getDouble(args, 1),   // volume
+        getDouble(args, 2),   // price
+        getDouble(args, 3),   // sl
+        getDouble(args, 4),   // tp
+        getInteger(args, 5)); // magic
   }
 
   //
   if (action == "SellStop")
   {
     return FXSellStop(
-        args[0],                   // symbol
-        StringToDouble(args[1]),   // volume
-        StringToDouble(args[2]),   // price
-        StringToDouble(args[3]),   // sl
-        StringToDouble(args[4]),   // tp
-        StringToInteger(args[5])); // magic
+        getString(args, 0),   // symbol
+        getDouble(args, 1),   // volume
+        getDouble(args, 2),   // price
+        getDouble(args, 3),   // sl
+        getDouble(args, 4),   // tp
+        getInteger(args, 5)); // magic
   }
 
   //
   if (action == "Buy")
   {
     return FXBuy(
-        args[0],                   // symbol
-        StringToDouble(args[1]),   // volume
-        StringToDouble(args[2]),   // price
-        StringToDouble(args[3]),   // sl
-        StringToDouble(args[4]),   // tp
-        StringToInteger(args[5])); // magic
+        getString(args, 0),   // symbol
+        getDouble(args, 1),   // volume
+        getDouble(args, 2),   // price
+        getDouble(args, 3),   // sl
+        getDouble(args, 4),   // tp
+        getInteger(args, 5)); // magic
   }
 
   //
   if (action == "Sell")
   {
     return FXSell(
-        args[0],                   // symbol
-        StringToDouble(args[1]),   // volume
-        StringToDouble(args[2]),   // price
-        StringToDouble(args[3]),   // sl
-        StringToDouble(args[4]),   // tp
-        StringToInteger(args[5])); // magic
+        getString(args, 0),   // symbol
+        getDouble(args, 1),   // volume
+        getDouble(args, 2),   // price
+        getDouble(args, 3),   // sl
+        getDouble(args, 4),   // tp
+        getInteger(args, 5)); // magic
   }
 
   //
   if (action == "Orders")
   {
     return FXOrders(
-        args[0],                  // symbol
-        StringToInteger(args[1]), // offset
-        StringToInteger(args[2]), // limit
-        StringToInteger(args[3])  // magic
-    );
+        getString(args, 0),   // symbol
+        getInteger(args, 1),  // offset
+        getInteger(args, 2),  // limit
+        getInteger(args, 3)); // magic
   }
 
   //
   if (action == "OrdersTotal")
   {
     return FXOrdersTotal(
-        args[0],                 // symbol
-        StringToInteger(args[1]) // magic
-    );
+        getString(args, 0),   // symbol
+        getInteger(args, 1)); // magic
   }
 
   //
   if (action == "Positions")
   {
     return FXPositions(
-        args[0],                  // symbol
-        StringToInteger(args[1]), // offset
-        StringToInteger(args[2]), // limit
-        StringToInteger(args[3])  // magic
-    );
+        getString(args, 0),   // symbol
+        getInteger(args, 1),  // offset
+        getInteger(args, 2),  // limit
+        getInteger(args, 3)); // magic
   }
 
   //
   if (action == "PositionsTotal")
   {
     return FXPositionsTotal(
-        args[0],                 // symbol
-        StringToInteger(args[1]) // magic
-    );
+        getString(args, 0),   // symbol
+        getInteger(args, 1)); // magic
   }
 
   //
   if (action == "OrderModify")
   {
     return FXOrderModify(
-        StringToInteger(args[0]),  // ticket
-        StringToDouble(args[1]),   // price
-        StringToDouble(args[2]),   // sl
-        StringToDouble(args[3]),   // tp
-        StringToInteger(args[4])); // expiration
+        getInteger(args, 0),  // ticket
+        getDouble(args, 1),   // price
+        getDouble(args, 2),   // sl
+        getDouble(args, 3),   // tp
+        getInteger(args, 4)); // expiration
   }
 
   //
   if (action == "OrderDelete")
   {
-    return FXOrderDelete(StringToInteger(args[0])); // ticket
+    return FXOrderDelete(getInteger(args, 0)); // ticket
   }
 
   //
   if (action == "PositionModify")
   {
     return FXPositionModify(
-        StringToInteger(args[0]), // ticket
-        StringToDouble(args[1]),  // sl
-        StringToDouble(args[2])); // tp
+        getInteger(args, 0),  // ticket
+        getDouble(args, 1),  // sl
+        getDouble(args, 2)); // tp
   }
 
   //
   if (action == "PositionClose")
   {
-    return FXPositionClose(StringToInteger(args[0])); // ticket
+    return FXPositionClose(getInteger(args, 0)); // ticket
   }
 
   //
   if (action == "PositionCloseAll")
   {
     return FXPositionCloseAll(
-        args[0],                   // symbol
-        StringToInteger(args[1])); // magic
+        getString(args, 0),   // symbol
+        getInteger(args, 1)); // magic
   }
 
   //
   if (action == "Rates")
   {
     return FXRates(
-        args[0],                  // symbol
-        args[1],                  // timeframe
-        StringToInteger(args[2]), // start_pos
-        StringToInteger(args[3])  // count
+        getString(args, 0),   // symbol
+        getString(args, 1),   // timeframe
+        getInteger(args, 2),  // start_pos
+        getInteger(args, 3)   // count
     );
   }
 
@@ -219,7 +245,7 @@ string OnAction(string action, string &args[])
   if (action == "Tick")
   {
     return FXTick(
-        args[0] // symbol
+        getString(args, 0) // symbol
     );
   }
 
@@ -227,20 +253,18 @@ string OnAction(string action, string &args[])
   if (action == "PositionHistory")
   {
     return FXPositionHistory(
-        args[0],                  // symbol
-        StringToInteger(args[1]), // offset
-        StringToInteger(args[2]), // limit
-        StringToInteger(args[3])  // magic
-    );
+        getString(args, 0),   // symbol
+        getInteger(args, 1),  // offset
+        getInteger(args, 2),  // limit
+        getInteger(args, 3)); // magic
   }
 
   //
   if (action == "PositionHistoryTotal")
   {
     return FXPositionHistoryTotal(
-        args[0],                 // symbol
-        StringToInteger(args[1]) // magic
-    );
+        getString(args, 0),   // symbol
+        getInteger(args, 1)); // magic
   }
 
   //
@@ -253,36 +277,36 @@ string OnAction(string action, string &args[])
   if (action == "iMA")
   {
     return FXiMA(
-        args[0],
-        args[1],
-        StringToInteger(args[2]));
+        getString(args, 0), // symbol
+        getString(args, 1), // timeframe
+        getInteger(args, 2)); // period
   }
 
   if (action == "iRSI")
   {
     return FXiRSI(
-        args[0],
-        args[1],
-        StringToInteger(args[2]));
+        getString(args, 0), // symbol
+        getString(args, 1), // timeframe
+        getInteger(args, 2)); // period
   }
 
   if (action == "iMomentum")
   {
     return FXiMomentum(
-        args[0],
-        args[1],
-        StringToInteger(args[2]));
+        getString(args, 0), // symbol
+        getString(args, 1), // timeframe
+        getInteger(args, 2)); // period
   }
 
   if (action == "iForce")
   {
     return FXiForce(
-        args[0],
-        args[1],
-        StringToInteger(args[2]));
+        getString(args, 0), // symbol
+        getString(args, 1), // timeframe
+        getInteger(args, 2)); // period
   }
 
-  return "";
+  return "{\"success\":0,\"error\":404}";
 }
 
 void OnStart()
