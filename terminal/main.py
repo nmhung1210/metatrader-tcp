@@ -184,43 +184,24 @@ async def get_terminal(platform, username, password, server, client_writer, clie
 
             # write connect result to client
             client_writer.write(connect_id.encode() + b" {\"success\": 1}\r\n")
-            await client_writer.drain()
 
-            last_request_at = time.time()   
-            while True:
-                if (time.time() - last_request_at) > 600:
-                    print("No requests for 600 seconds. Closing terminal connection...")
-                    break
+            async def pipe(src, dst):
+                try:
+                    while not src.at_eof():
+                        data = await src.read(4096)
+                        if not data:
+                            break
+                        dst.write(data)
+                except Exception:
+                    pass
 
-                if (cwriter.is_closing()):
-                    break
-
-                request = await client_reader.readline()
-                if not request:
-                    await client_writer.drain() 
-                    client_writer.close()
-                    break
-
-                params = shlex.split(request.decode().strip())
-                if (len(params) < 2):
-                    await client_writer.drain()
-                    client_writer.close()
-                    return
-
-                print(f"Forwarding request to terminal: {request.decode().strip()}")
-                cwriter.write(request + b"\r\n")
-                await cwriter.drain()
-
-                # read for response
-                response = await creader.readline()
+            task1 = asyncio.create_task(pipe(client_reader, cwriter))
+            task2 = asyncio.create_task(pipe(creader, client_writer))
+            
+            await asyncio.wait([task1, task2], return_when=asyncio.FIRST_COMPLETED)
+            cwriter.close()
+            client_writer.close()
                 
-                client_writer.write(response)
-                await client_writer.drain()
-
-                # update last request time
-                last_request_at = time.time()
-                
-
         except Exception as e:
             print(f"Error handling connection: {e}")
         finally:
