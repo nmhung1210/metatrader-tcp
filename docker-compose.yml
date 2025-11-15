@@ -1,6 +1,6 @@
 services:
   build:
-    image: nmhung1210/repo:fxterminal-tcp-v1
+    image: nmhung1210/repo:fxterminal-tcp-v2
     build:
       context: ./
       dockerfile: Dockerfile
