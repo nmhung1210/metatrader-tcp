@@ -51,7 +51,7 @@ double getDouble(string &args[], int index, double defaultValue = 0.0)
   return StringToDouble(args[index]);
 }
 
-int getInteger(string &args[], int index, int defaultValue = 0)
+long getInteger(string &args[], int index, long defaultValue = 0)
 {
   if (index >= ArraySize(args))
   {
