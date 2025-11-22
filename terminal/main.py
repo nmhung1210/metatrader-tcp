@@ -16,6 +16,10 @@ import uuid
 BUNDLE_DIR = getattr(
     sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))   
 
+# Dictionary to keep track of terminal sessions
+# Key: (platform, username, server, password_hash)
+# Value: dict with 'proc', 'terminal_dir', 'request_queue'
+terminal_sessions = {}
 
 def init_mt4_terminal():
     terminal_dir = os.path.join(
@@ -173,8 +177,10 @@ async def get_terminal(platform, username, password, server, client_writer, clie
     proc = None
     terminal_dir = None
     gwserver = None
+    is_client_connected = False
 
-    async def handle_conn(creader: StreamReader, cwriter: StreamWriter):       
+    async def handle_conn(creader: StreamReader, cwriter: StreamWriter):     
+        nonlocal proc, terminal_dir, gwserver, is_client_connected, client_writer  
         try:
             cuid = (await creader.readline()).decode("utf8").strip()
             print(f"Client UID: {cuid}")
@@ -184,6 +190,7 @@ async def get_terminal(platform, username, password, server, client_writer, clie
 
             # write connect result to client
             client_writer.write(connect_id.encode() + b" {\"success\": 1}\r\n")
+            is_client_connected = True
 
             async def pipe(src, dst):
                 try:
@@ -226,6 +233,17 @@ async def get_terminal(platform, username, password, server, client_writer, clie
         raise ValueError("Unsupported platform. Use 'mt4' or 'mt5'.")
 
     async def monitor_process():
+        nonlocal is_client_connected, client_writer, proc, terminal_dir
+        await asyncio.sleep(30)
+
+        print(f"Checking client connection status: {is_client_connected}")
+
+        if not is_client_connected:
+            client_writer.write(connect_id.encode() + b" {\"success\": 0}\r\n")
+            client_writer.close()
+            print("No client connected within timeout. Terminating terminal process...")
+            proc.terminate()
+            
         while proc.poll() is None:
             await asyncio.sleep(1)
         print("Terminal process has exited. Cleaning up...")

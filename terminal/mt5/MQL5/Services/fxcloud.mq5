@@ -4,7 +4,37 @@
 
 input long PORT = 5555;
 input string UUID = "none";
+input bool ENABLE_LOGGING = true;
 static ClientSocket *gSocket;
+static int logFileHandle = INVALID_HANDLE;
+
+string GetLogFilename()
+{
+  return "fxcloud.log";
+}
+
+void LogMessage(string message)
+{
+  if (!ENABLE_LOGGING)
+    return;
+
+  string logMsg = message;
+  if (StringLen(logMsg) > 256)
+  {
+    logMsg = StringSubstr(logMsg, 0, 253) + "...";
+  }
+
+  string filename = GetLogFilename();
+  logFileHandle = FileOpen(filename, FILE_WRITE | FILE_READ | FILE_TXT | FILE_ANSI);
+
+  if (logFileHandle != INVALID_HANDLE)
+  {
+    FileSeek(logFileHandle, 0, SEEK_END);
+    string timestamp = TimeToString(TimeCurrent(), TIME_DATE | TIME_SECONDS);
+    FileWriteString(logFileHandle, StringFormat("[%s] %s\r\n", timestamp, logMsg));
+    FileClose(logFileHandle);
+  }
+}
 
 void OnReady()
 {
@@ -13,13 +43,13 @@ void OnReady()
 
 void OnConnected()
 {
-  Print("Connected! " + UUID);
+  LogMessage("Connected to gateway on port " + IntegerToString(PORT) + " with UUID: " + UUID);
   gSocket.Send(UUID + "\r\n");
 }
 
 void OnDisconnected()
 {
-  Print("Disconnected!");
+  LogMessage("Disconnected from gateway");
   delete gSocket;
   Sleep(1000);
   gSocket = new ClientSocket("127.0.0.1", (ushort)PORT);
@@ -27,6 +57,8 @@ void OnDisconnected()
 
 string OnMessage(string msg)
 {
+  LogMessage("REQUEST: " + msg);
+
   string args[];
   long len = StringSplit(msg, StringGetCharacter(" ", 0), args);
   if (len <= 1)
@@ -37,9 +69,12 @@ string OnMessage(string msg)
   string action = args[1];
   string params[];
   ArrayCopy(params, args, 0, 2, WHOLE_ARRAY);
-  
+
   string result = OnAction(action, params);
-  return req_id + " " + result;
+  string response = req_id + " " + result;
+
+  LogMessage("RESPONSE: " + response);
+  return response;
 }
 
 double getDouble(string &args[], int index, double defaultValue = 0.0)
@@ -82,8 +117,7 @@ string OnAction(string action, string &args[])
   if (action == "SymbolInfo")
   {
     return FXSymbolInfo(
-      getString(args, 0)
-    );
+        getString(args, 0));
   }
   //
   if (action == "BuyLimit")
@@ -318,21 +352,36 @@ string OnAction(string action, string &args[])
 
 void OnStart()
 {
-  Print(StringFormat("Starting uid=%s gwport=%d...", UUID, PORT));
+  LogMessage(StringFormat("Starting uid=%s gwport=%d...", UUID, PORT));
   bool isReady = false;
   bool isConnected = false;
+  int attempt = 0;
   while (true)
   {
     Sleep(1000);
-    Print("update");
     if (
         AccountInfoInteger(ACCOUNT_LOGIN) == 0 ||
         AccountInfoString(ACCOUNT_NAME) == "" ||
         AccountInfoString(ACCOUNT_COMPANY) == "" ||
         AccountInfoString(ACCOUNT_CURRENCY) == "")
     {
+      SymbolsTotal(false); // Dummy call to refresh account info
+      int lastError = GetLastError();
+      LogMessage(StringFormat("Waiting for account info... Login=%d, Name=%s, Company=%s, Currency=%s, LastError=%d",
+                              AccountInfoInteger(ACCOUNT_LOGIN),
+                              AccountInfoString(ACCOUNT_NAME),
+                              AccountInfoString(ACCOUNT_COMPANY),
+                              AccountInfoString(ACCOUNT_CURRENCY),
+                              lastError));
+      attempt++;
+      if (attempt > 10) {
+        LogMessage("Connection failed.");
+        delete gSocket;
+        break;
+      }
       continue;
     }
+
     if (!isReady)
     {
       isReady = true;
@@ -363,7 +412,7 @@ void OnStart()
       }
       else
       {
-        Sleep(100);
+        Sleep(10);
       }
     }
   }
