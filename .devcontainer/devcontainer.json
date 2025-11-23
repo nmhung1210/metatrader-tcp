@@ -1,0 +1,21 @@
+{
+	"name": "MetaTrader TCP Dev",
+	"image": "nmhung1210/repo:wine64",
+	"workspaceFolder": "/workspace",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+	
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-vscode.cpptools",
+				"ms-python.python"
+			]
+		}
+	},
+
+	"forwardPorts": [8888],
+	
+	"postCreateCommand": "echo 'Dev container ready'",
+	
+	"remoteUser": "root"
+}
