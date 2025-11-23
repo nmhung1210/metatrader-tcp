@@ -8,7 +8,9 @@
     "compile": "node scripts/compile.js",
     "build": "docker compose build",
     "push": "docker compose push",
-    "dev": "nodemon --exec python terminal/main.py"
+    "dev": "nodemon --exec python terminal/main.py",
+    "up": "docker compose -p fxterminal-tcp-v2 -f infra/docker-compose.yml up -d --remove-orphans",
+    "down": "docker compose -p fxterminal-tcp-v2 -f infra/docker-compose.yml down"
   },
   "author": "",
   "license": "ISC",

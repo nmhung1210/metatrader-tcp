@@ -1,9 +1,7 @@
 services:
-  build:
-    image: nmhung1210/repo:fxterminal-tcp-v1
+  fxterminal-tcp-v2:
+    image: nmhung1210/repo:fxterminal-tcp-v2
     restart: always
-    volumes:
-      - ./.session:/app/.session
     ports:
-      - "8888:8888"
+      - "8899:8888"
       
