@@ -1,0 +1,8 @@
+services:
+  build:
+    image: nmhung1210/repo:wine64
+    volumes:
+      - ./terminal:/root/terminal
+    working_dir: /root/terminal
+    command: bash -c "wine64 compile.bat"
+      

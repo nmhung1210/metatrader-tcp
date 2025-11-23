@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "postinstall": "node scripts/unzip-mt5.js && pip install nats-py pyinstaller unflatten uuid sentry_sdk",
+    "compile": "node scripts/compile.js",
     "build": "docker compose build",
     "push": "docker compose push",
     "dev": "nodemon --exec python terminal/main.py"
