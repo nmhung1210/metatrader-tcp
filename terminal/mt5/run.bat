@@ -24,3 +24,7 @@ for /d %%d in (MQL5\*) do (
 
 del /f /q terminal64.zip
 powershell -Command "Compress-Archive -Force 'terminal64.exe' 'terminal64.zip'"
+
+
+del /f /q MetaEditor64.zip
+powershell -Command "Compress-Archive -Force 'MetaEditor64.exe' 'MetaEditor64.zip'"
