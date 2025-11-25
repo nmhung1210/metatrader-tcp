@@ -51,6 +51,23 @@ def init_mt5_terminal():
     return Popen([terminal, "/portable=true"], cwd=terminal_dir)
 
 def init_terminal():
+    mt5_terminal_dir = os.path.join(
+        ".sessions", "mt5"
+    )
+    mt4_terminal_dir = os.path.join(
+        ".sessions", "mt4"
+    )
+    
+    try:
+        shutil.rmtree(mt5_terminal_dir)
+    except:
+        pass
+
+    try:
+        shutil.rmtree(mt4_terminal_dir)
+    except:
+        pass
+
     async def start():
         mt4_proc = init_mt4_terminal()
         mt5_proc = init_mt5_terminal()
