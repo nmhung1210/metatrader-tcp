@@ -53,16 +53,10 @@ def init_mt5_terminal():
 
 def init_terminal():
     async def start():
-        last_start_time = time.time()
         mt4_proc = init_mt4_terminal()
-        await asyncio.sleep(10)
-
-        last_start_time = time.time()
         mt5_proc = init_mt5_terminal()
-
         await asyncio.sleep(120)
         mt4_proc.terminate()
-        await asyncio.sleep(30)
         mt5_proc.terminate()
 
     async def wait_close():
@@ -186,6 +180,8 @@ async def get_terminal(platform, username, password, server, client_writer, clie
     terminal_dir = None
     gwserver = None
     is_client_connected = False
+
+    global last_start_time
 
     while True:
         current_time = time.time()
