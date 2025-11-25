@@ -51,22 +51,22 @@ def init_mt5_terminal():
     return Popen([terminal, "/portable=true"], cwd=terminal_dir)
 
 def init_terminal():
-    mt5_terminal_dir = os.path.join(
-        ".sessions", "mt5"
-    )
-    mt4_terminal_dir = os.path.join(
-        ".sessions", "mt4"
-    )
+    # mt5_terminal_dir = os.path.join(
+    #     ".sessions", "mt5"
+    # )
+    # mt4_terminal_dir = os.path.join(
+    #     ".sessions", "mt4"
+    # )
     
-    try:
-        shutil.rmtree(mt5_terminal_dir)
-    except:
-        pass
+    # try:
+    #     shutil.rmtree(mt5_terminal_dir)
+    # except:
+    #     pass
 
-    try:
-        shutil.rmtree(mt4_terminal_dir)
-    except:
-        pass
+    # try:
+    #     shutil.rmtree(mt4_terminal_dir)
+    # except:
+    #     pass
 
     async def start():
         mt4_proc = init_mt4_terminal()
@@ -93,7 +93,7 @@ def start_mt4_terminal(username, password, server, gwport, uid):
         ".sessions", "default", "mt4"
     )
     terminal_dir = os.path.join(
-        ".sessions", "mt4", str(username), safe_server, uid
+        ".sessions", "mt4", str(username), safe_server, hash_pw
     )
     terminal = os.path.join(terminal_dir, "terminal.exe")
     config = os.path.join(terminal_dir, "session.conf")
@@ -142,7 +142,7 @@ def start_mt5_terminal(username, password, server, gwport, uid):
         ".sessions", "default", "mt5"
     )
     terminal_dir = os.path.join(
-        ".sessions", "mt5", str(username), safe_server, uid
+        ".sessions", "mt5", str(username), safe_server, hash_pw
     )
     terminal = os.path.join(terminal_dir, "terminal64.exe")
     config = os.path.join(terminal_dir, "session.conf")
@@ -275,15 +275,15 @@ async def get_terminal(platform, username, password, server, client_writer, clie
         while proc.poll() is None:
             await asyncio.sleep(1)
         print("Terminal process has exited. Cleaning up...")
-        while True:
-            await asyncio.sleep(10)
-            if terminal_dir and os.path.exists(terminal_dir):
-                try:
-                    shutil.rmtree(terminal_dir)
-                    print(f"Removed terminal directory: {terminal_dir}")
-                    break
-                except Exception as e:
-                    print(f"Error removing terminal directory: {e}")
+        # while True:
+        #     await asyncio.sleep(10)
+        #     if terminal_dir and os.path.exists(terminal_dir):
+        #         try:
+        #             shutil.rmtree(terminal_dir)
+        #             print(f"Removed terminal directory: {terminal_dir}")
+        #             break
+        #         except Exception as e:
+        #             print(f"Error removing terminal directory: {e}")
             
     asyncio.create_task(monitor_process())
     return proc, terminal_dir
