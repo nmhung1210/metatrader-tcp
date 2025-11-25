@@ -21,8 +21,7 @@ BUNDLE_DIR = getattr(
 # Value: dict with 'proc', 'terminal_dir', 'request_queue'
 terminal_sessions = {}
 
-last_start_time = time.time()
-
+next_start_time = time.time() + 60
 def init_mt4_terminal():
     terminal_dir = os.path.join(
         ".sessions", "default", "mt4"
@@ -181,15 +180,15 @@ async def get_terminal(platform, username, password, server, client_writer, clie
     gwserver = None
     is_client_connected = False
 
-    global last_start_time
+    global next_start_time
 
     while True:
         current_time = time.time()
-        if current_time - last_start_time >= 10:
+        if current_time >= next_start_time:
             break
         await asyncio.sleep(1)
         
-    last_start_time = time.time()
+    next_start_time = time.time() + 180
 
     async def handle_conn(creader: StreamReader, cwriter: StreamWriter):     
         nonlocal proc, terminal_dir, gwserver, is_client_connected, client_writer  
@@ -203,6 +202,7 @@ async def get_terminal(platform, username, password, server, client_writer, clie
             # write connect result to client
             client_writer.write(connect_id.encode() + b" {\"success\": 1}\r\n")
             is_client_connected = True
+            next_start_time = time.time() + 1
 
             async def pipe(src, dst):
                 try:
@@ -246,10 +246,8 @@ async def get_terminal(platform, username, password, server, client_writer, clie
 
     async def monitor_process():
         nonlocal is_client_connected, client_writer, proc, terminal_dir
-        await asyncio.sleep(30)
-
+        await asyncio.sleep(180)
         print(f"Checking client connection status: {is_client_connected}")
-
         if not is_client_connected:
             client_writer.write(connect_id.encode() + b" {\"success\": 0}\r\n")
             client_writer.close()
@@ -270,7 +268,6 @@ async def get_terminal(platform, username, password, server, client_writer, clie
                     print(f"Error removing terminal directory: {e}")
             
     asyncio.create_task(monitor_process())
-
     return proc, terminal_dir
 
 def create_handle_client(auth: str = None):
