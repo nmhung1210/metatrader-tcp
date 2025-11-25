@@ -192,6 +192,7 @@ async def get_terminal(platform, username, password, server, client_writer, clie
 
     async def handle_conn(creader: StreamReader, cwriter: StreamWriter):     
         nonlocal proc, terminal_dir, gwserver, is_client_connected, client_writer  
+        global next_start_time
         try:
             cuid = (await creader.readline()).decode("utf8").strip()
             print(f"Client UID: {cuid}")
