@@ -21,6 +21,8 @@ BUNDLE_DIR = getattr(
 # Value: dict with 'proc', 'terminal_dir', 'request_queue'
 terminal_sessions = {}
 
+last_start_time = time.time()
+
 def init_mt4_terminal():
     terminal_dir = os.path.join(
         ".sessions", "default", "mt4"
@@ -51,10 +53,16 @@ def init_mt5_terminal():
 
 def init_terminal():
     async def start():
+        last_start_time = time.time()
         mt4_proc = init_mt4_terminal()
+        await asyncio.sleep(10)
+
+        last_start_time = time.time()
         mt5_proc = init_mt5_terminal()
+
         await asyncio.sleep(120)
         mt4_proc.terminate()
+        await asyncio.sleep(30)
         mt5_proc.terminate()
 
     async def wait_close():
@@ -178,6 +186,14 @@ async def get_terminal(platform, username, password, server, client_writer, clie
     terminal_dir = None
     gwserver = None
     is_client_connected = False
+
+    while True:
+        current_time = time.time()
+        if current_time - last_start_time >= 10:
+            break
+        await asyncio.sleep(1)
+        
+    last_start_time = time.time()
 
     async def handle_conn(creader: StreamReader, cwriter: StreamWriter):     
         nonlocal proc, terminal_dir, gwserver, is_client_connected, client_writer  
