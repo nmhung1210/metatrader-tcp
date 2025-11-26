@@ -7,3 +7,5 @@ node_modules
 .vscode
 __pycache__
 dist
+terminal/mt5/MetaEditor64.zip
+terminal/mt5/terminal64.zip

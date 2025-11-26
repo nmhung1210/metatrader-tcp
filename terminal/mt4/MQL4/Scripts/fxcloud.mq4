@@ -29,6 +29,16 @@ void LogMessage(string message)
   if (logFileHandle != INVALID_HANDLE)
   {
     FileSeek(logFileHandle, 0, SEEK_END);
+    long fileSize = FileTell(logFileHandle);
+    
+    // If file size is larger than 1MB (1048576 bytes), truncate it
+    if (fileSize > 1048576)
+    {
+      FileClose(logFileHandle);
+      logFileHandle = FileOpen(filename, FILE_WRITE | FILE_TXT | FILE_ANSI);
+      FileSeek(logFileHandle, 0, SEEK_SET);
+    }
+    
     string timestamp = TimeToString(TimeCurrent(), TIME_DATE | TIME_SECONDS);
     FileWriteString(logFileHandle, StringFormat("[%s] %s\r\n", timestamp, logMsg));
     FileClose(logFileHandle);
