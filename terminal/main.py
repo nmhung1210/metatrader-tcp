@@ -17,25 +17,71 @@ import traceback
 from datetime import datetime, timedelta
 import glob
 
-# Setup logging configuration
-log_dir = os.path.join(os.path.dirname(__file__), '.sessions', 'logs')
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, f'metatrader_tcp_{datetime.now().strftime("%Y%m%d")}.log')
+BUNDLE_DIR = getattr(
+    sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))   
+
+log_dir = os.path.join('.sessions', 'logs')
+
+# Ensure log directory exists with proper error handling
+try:
+    os.makedirs(log_dir, exist_ok=True)
+    print(f"Log directory: {log_dir}")
+except Exception as e:
+    print(f"Error creating log directory: {e}")
+    # Fallback to current directory
+    log_dir = os.path.join(BUNDLE_DIR, 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    print(f"Using fallback log directory: {log_dir}")
+
+# Current log file
+current_log_file = os.path.join(log_dir, 'metatrader.log')
+
+# Rotate log file if it exists
+if os.path.exists(current_log_file):
+    # Get the last modification time of the log file
+    try:
+        mtime = os.path.getmtime(current_log_file)
+        file_date = datetime.fromtimestamp(mtime)
+        # Only rotate if the file is from a different day
+        if file_date.date() < datetime.now().date():
+            archived_log = os.path.join(
+                log_dir, 
+                f'metatrader-{file_date.strftime("%d%m%Y")}.log'
+            )
+            shutil.move(current_log_file, archived_log)
+            print(f"Rotated log file to: {archived_log}")
+    except Exception as e:
+        print(f"Error rotating log file: {e}")
+
+log_file = current_log_file
+print(f"Log file: {log_file}")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 def cleanup_old_logs(log_directory, days_to_keep=3):
     """Remove log files older than specified days"""
     try:
         cutoff_date = datetime.now() - timedelta(days=days_to_keep)
-        log_pattern = os.path.join(log_directory, 'metatrader_tcp_*.log')
+        # Match archived log files pattern: metatrader-DDMMYYYY.log
+        log_pattern = os.path.join(log_directory, 'metatrader-*.log')
         log_files = glob.glob(log_pattern)
         
         removed_count = 0
         for log_path in log_files:
             try:
-                # Extract date from filename (metatrader_tcp_YYYYMMDD.log)
+                # Extract date from filename (metatrader-DDMMYYYY.log)
                 filename = os.path.basename(log_path)
-                date_str = filename.replace('metatrader_tcp_', '').replace('.log', '')
-                file_date = datetime.strptime(date_str, '%Y%m%d')
+                date_str = filename.replace('metatrader-', '').replace('.log', '')
+                file_date = datetime.strptime(date_str, '%d%m%Y')
                 
                 if file_date < cutoff_date:
                     os.remove(log_path)
@@ -52,22 +98,10 @@ def cleanup_old_logs(log_directory, days_to_keep=3):
     except Exception as e:
         logger.error(f"Error during log cleanup: {e}", exc_info=True)
 
-# Cleanup old logs before setting up new logging
+# Cleanup old logs after logger is initialized
 cleanup_old_logs(log_dir, days_to_keep=3)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file, encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
 
-logger = logging.getLogger(__name__)
-
-BUNDLE_DIR = getattr(
-    sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__)))   
 
 # Dictionary to keep track of terminal sessions
 # Key: (platform, username, server, password_hash)
