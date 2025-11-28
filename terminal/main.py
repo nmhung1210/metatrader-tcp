@@ -101,14 +101,7 @@ def cleanup_old_logs(log_directory, days_to_keep=3):
 # Cleanup old logs after logger is initialized
 cleanup_old_logs(log_dir, days_to_keep=3)
 
-
-
-# Dictionary to keep track of terminal sessions
-# Key: (platform, username, server, password_hash)
-# Value: dict with 'proc', 'terminal_dir', 'request_queue'
-terminal_sessions = {}
-
-next_start_time = time.time() + 60
+next_start_time = time.time() + 150
 def init_mt4_terminal():
     terminal_dir = os.path.join(
         ".sessions", "default", "mt4"
@@ -156,23 +149,6 @@ def init_mt5_terminal():
         raise
 
 def init_terminal():
-    # mt5_terminal_dir = os.path.join(
-    #     ".sessions", "mt5"
-    # )
-    # mt4_terminal_dir = os.path.join(
-    #     ".sessions", "mt4"
-    # )
-    
-    # try:
-    #     shutil.rmtree(mt5_terminal_dir)
-    # except:
-    #     pass
-
-    # try:
-    #     shutil.rmtree(mt4_terminal_dir)
-    # except:
-    #     pass
-
     async def start():
         try:
             logger.info("Starting default MT4 and MT5 terminals")
@@ -188,10 +164,6 @@ def init_terminal():
     async def wait_close():
         try:
             await start()
-            while True:
-                await asyncio.sleep(36000)
-                logger.info("Restarting default terminals")
-                await start()
         except Exception as e:
             logger.error(f"Error in wait_close loop: {e}", exc_info=True)
 
