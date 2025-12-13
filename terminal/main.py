@@ -364,6 +364,7 @@ async def get_terminal(platform, username, password, server, client_writer, clie
         except Exception as e:
             logger.error(f"Error handling connection for {username}: {e}", exc_info=True)
         finally:
+            next_start_time = time.time() + 60
             if proc is not None:
                 logger.info(f"Terminating terminal process {proc.pid} for {username}")
                 proc.terminate()
