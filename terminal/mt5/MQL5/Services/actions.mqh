@@ -3,6 +3,7 @@
 #include <Trade\Trade.mqh>
 CTrade trader;
 
+
 ENUM_TIMEFRAMES StringToTimeframe(string timeframe)
 {
   if (timeframe == "M1")
@@ -554,11 +555,17 @@ string FXPositionModify(const ulong ticket, double sl, double tp)
 string FXPositionClose(const ulong ticket)
 {
   string result = "{";
-  if (!PositionSelectByTicket(ticket))
+  int retries = 30;
+  bool success = false;
+  while (retries > 0 && PositionSelectByTicket(ticket))
   {
-    return "{\"success\":0,\"error\":404}";
+    retries--;
+    success = trader.PositionClose(ticket);
+    if (success)
+    {
+      break;
+    }
   }
-  bool success = trader.PositionClose(ticket);
   result += StringFormat("\"success\":%I64d", success);
   if (!success)
   {

@@ -580,7 +580,7 @@ string FXPositionClose(long ticket)
 
   string symbol = OrderSymbol();
   double lotSize = OrderLots();
-  int retries = 10;
+  int retries = 30;
   bool success = false;
   int error = 0;
 
